@@ -28,6 +28,7 @@ dashboard_project/
 ├── .env.example           # Template for environment variables
 ├── .gitignore             # Files to exclude from version control
 └── docker-compose.yml     # Orchestration of all services
+```
 
 ### Prerequistes
 
@@ -45,28 +46,29 @@ cd dashboard_project
 
 cp .env.example .env
 # Remember to open the new .env file and add your database password!
+```
 
 
-
-2. Launch the application 
-
+### 2. Launch the application 
+```bash
 docker-compose up --build
+```
 
-3. Access the dashboard
-
+### 3. Access the dashboard
+```bash
 http://localhost:5173
+```
 
+## Development workflow
 
-Development workflow
-
-1. Stopping the app: 
+### 1. Stopping the app: 
 
 Run docker-compose down.
 
-2. Cleaning data: 
+### 2. Cleaning data: 
 
 To wipe the database and start fresh, run docker-compose down -v.
 
-3. Adding new dependencies: 
+### 3. Adding new dependencies: 
 
 Add them to the respective package.json in server/ or client/, then run docker-compose up --build to reinstall them inside the containers.
