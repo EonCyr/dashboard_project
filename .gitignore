@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Docker Data - DONT REMOVE THIS LINE, IT IS USED FOR MYSQL DATA STORAGE
+mysql_data/
+
+# OS Specific
+.DS_Store
+Thumbs.db
+
+# Build artifacts (if you run builds locally)
+dist/
+build/
