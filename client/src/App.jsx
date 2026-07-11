@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { createLineChart } from './linechart.jsx'
 
-// Temporary data
-const metrics = [
+const initialMetrics = [
   { title: 'Metric 1', value: 'A', detail: 'On track' },
   { title: 'Metric 2', value: '2', detail: 'get good' },
   { title: 'Metric 3', value: 'C', detail: 'Needs attention' },
@@ -11,23 +10,50 @@ const metrics = [
 ]
 
 function App() {
-  const [count, setCount] = useState(0)
   const [data, setData] = useState(null);
+  const [metrics, setMetrics] = useState(initialMetrics);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // This code runs only ONCE when the component first appears
     const fetchData = async () => {
       try {
         const response = await fetch('/api/');
         const result = await response.json();
         setData(result.message);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error('Error fetching data:', error);
       }
     };
 
     fetchData();
-  }, []); // The empty array [] ensures it only runs once
+  }, []);
+
+  // Function to load student data from the API
+  const loadData = async () => {
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/students');
+      if (!response.ok) {
+        throw new Error('Failed to load student data');
+      }
+
+      const students = await response.json();
+      console.log('Fetched students:', students);
+      const studentMetrics = students.map((student) => ({
+        title: student.name,
+        value: student.band,
+        detail: student.progress
+      }));
+
+      setMetrics(studentMetrics);
+    } catch (error) {
+      console.error('Error loading student data:', error);
+      setMetrics([{ title: 'Error', value: 'No data', detail: 'Unable to load student records' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="dashboard">
@@ -40,6 +66,11 @@ function App() {
       <section className="panel">
         <h2>Student Metrics</h2>
         {data && <p>API Response: {data}</p>}
+
+        <button className="load-button" onClick={loadData} disabled={isLoading}>
+          {isLoading ? 'Loading...' : 'Load Data'}
+        </button>
+        
 
         <div className="card-grid">
           {metrics.map((item) => (

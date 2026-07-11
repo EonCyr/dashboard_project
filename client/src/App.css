@@ -52,6 +52,17 @@ h1 {
   color: #E91626;
 }
 
+.load-button {
+  background: linear-gradient(135deg, #f9fbff 0%, #f2f6ff 100%);
+  color: black;
+  border: 1px solid #dce7ff;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
