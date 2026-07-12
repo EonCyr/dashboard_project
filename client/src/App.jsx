@@ -1,140 +1,228 @@
 import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
+import { createLineChart } from './linechart.jsx'
+
+const initialMetrics = [
+  { title: 'Metric 1', value: 'A', detail: 'On track' },
+  { title: 'Metric 2', value: '2', detail: 'get good' },
+  { title: 'Metric 3', value: 'C', detail: 'Needs attention' },
+  { title: 'Metric 4', value: '98.2%', detail: 'amazing' },
+]
 
 function App() {
-  const [count, setCount] = useState(0)
+  // Authentication state
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [role, setRole] = useState(''); // 'parent' or 'tutor'
+
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState(''); 
+
+  // dashboard states
   const [data, setData] = useState(null);
+  const [metrics, setMetrics] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Login component
+  const handleLogin = async (e) => {
+  e.preventDefault();
+  setErrorMessage(''); // Clear previous errors
+
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, role })
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      setRole(result.role);
+      setIsLoggedIn(true);
+    } else {
+      // Use setErrorMessage instead of alert
+      setErrorMessage(result.error || 'Login failed');
+    }
+  } catch (error) {
+    console.error('Login request failed:', error);
+    // Use setErrorMessage instead of alert
+    setErrorMessage('Could not connect to server. Please check your network.');
+  }
+};
 
   useEffect(() => {
-    // This code runs only ONCE when the component first appears
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/');
-        const result = await response.json();
-        setData(result.message);
-      } catch (error) {
-        console.error("Error fetching data:", error);
+    if (isLoggedIn) { // Only fetch when logged in
+      const fetchData = async () => {
+        try {
+          const response = await fetch('/api/');
+          const result = await response.json();
+          setData(result.message);
+        } catch (error) { console.error(error); }
+      };
+      fetchData();
+    }
+  }, [isLoggedIn]);
+
+  // Function to load student data from the API
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/students?role=${role}&username=${username}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to load student data');
       }
-    };
 
-    fetchData();
-  }, []); // The empty array [] ensures it only runs once
+      const students = await response.json();
+      const studentMetrics = students.map((student) => ({
+        name: student.name,
+        title: student.name, // Keep both for compatibility with your map functions
+        value: student.overall_band || 'N/A', // Used by tutor view
+        overall: student.overall_band,        // Used by parent view
+        vocab_band: student.vocab_band,
+        phonics_band: student.phonics_band,
+        writing_band: student.writing_band,
+        listening_band: student.listening_band,
+        // Add the details object for the tutor view sub-details
+        details: {
+          vocab: student.vocab_band,
+          phonics: student.phonics_band
+        }
+      }));
+      setMetrics(studentMetrics);
+    } catch (error) {
+      console.error('Error loading student data:', error);
+      setMetrics([{ title: 'Error', value: 'No data', detail: 'Unable to load student records' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+// --- 1. LOGIN SCREEN ---
+if (!isLoggedIn) {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-            {data && <p>API Response: {data}</p>}
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+    <div className="login-container">
+      <form className="login-card" onSubmit={handleLogin}>
+        <h2>Dashboard Login</h2>
+        
+        {/* ADDED: Display error if it exists */}
+        {errorMessage && <p style={{ color: 'red', fontWeight: 'bold' }}>{errorMessage}</p>}
+        
+        <input 
+          type="text" 
+          placeholder="Username" 
+          value={username} 
+          // UPDATED: Clears error when user types
+          onChange={(e) => { setUsername(e.target.value); setErrorMessage(''); }} 
+          required 
+        />
+        
+        <input 
+          type="password" 
+          placeholder="Password" 
+          value={password} 
+          // UPDATED: Clears error when user types
+          onChange={(e) => { setPassword(e.target.value); setErrorMessage(''); }} 
+          required 
+        />
+
+        <select 
+          onChange={(e) => { setRole(e.target.value); setErrorMessage(''); }} 
+          required
         >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          <option value="">Select Role</option>
+          <option value="parent">Parent</option>
+          <option value="tutor">Tutor</option>
+        </select>
+        
+        <button type="submit">Log In</button>
+      </form>
+    </div>
+  );
 }
 
+  return (
+    <div className={`dashboard ${role}`}>
+      <header className="dashboard-header">
+        <div>
+          <h1>{role === 'tutor' ? 'Tutor Management Dashboard' : 'Parent Progress Portal'}</h1>
+        </div>
+      </header>
+
+      <section className="panel">
+        <h2>Student Metrics</h2>
+        {data && <p>API Response: {data}</p>}
+
+        <button className="load-button" onClick={loadData} disabled={isLoading}>
+          {isLoading ? 'Loading...' : 'Load Data'}
+        </button>
+
+        {/* NEW: Conditional check for empty metrics */}
+        {metrics.length === 0 ? (
+          <div className="empty-state">
+            <p>No student data loaded. Please click the "Load Data" button to view progress.</p>
+          </div>
+        ) : (
+          <div className="card-grid">
+              {role === 'tutor' ? (
+                // Tutor view: remains the same
+                metrics.map((item) => (
+                  <article className="data-card" key={item.name}>
+                    <p className="card-label">{item.name}</p>
+                    {/* This now displays the overall_band fetched from student_scores */}
+                    <h3>{item.value}</h3> 
+                    
+                    {/* Optional: Show small sub-details if you want */}
+                    <div className="sub-details" style={{ fontSize: '0.75rem', color: '#888' }}>
+                      V: {item.details.vocab || '-'} | P: {item.details.phonics || '-'}
+                    </div>
+                  </article>
+                ))
+              ) : (
+                // Parent view: Updated to display 4 cards per student
+                metrics.flatMap((student) => {
+                  // Define the individual metrics to display
+                  const scoreCards = [
+                    { label: 'Vocab', value: student.vocab_band },
+                    { label: 'Phonics', value: student.phonics_band },
+                    { label: 'Writing', value: student.writing_band },
+                    { label: 'Listening', value: student.listening_band },
+                  ];
+
+                  // Return the cards for this specific student
+                  return scoreCards.map((score) => (
+                    <article className="data-card" key={`${student.title}-${score.label}`}>
+                      <p className="card-label">{student.title}: {score.label}</p>
+                      <h3>{score.value || 'N/A'}</h3>
+                    </article>
+                  ));
+                })
+              )}
+            </div>
+        )}
+
+        <div className="content-row">
+          <div className="chart-wrapper">{createLineChart()}</div>
+          <aside className="side-panel">
+            <h3>{role === 'tutor' ? 'Tutor Tools' : 'Parent Resources'}</h3>
+              {role === 'tutor' ? (
+                <ul>
+                  <li><button>Add New Grade</button></li>
+                  <li><button>Message All Parents</button></li>
+                </ul>
+              ) : (
+                <ul>
+                  <li><p>Upcoming Parent-Teacher Meeting</p></li>
+                  <li><button>Contact Tutor</button></li>
+                </ul>
+              )}
+          </aside>
+        </div>
+      </section>
+
+    </div>
+  )
+}
 
 export default App
