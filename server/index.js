@@ -37,13 +37,49 @@ const connectWithRetry = () => {
 connectWithRetry();
 
 app.get('/students', (req, res) => {
-  pool.query('SELECT name, student_id, age, band, progress FROM students', (err, rows) => {
+    const { role, username } = req.query;
+
+    let sql = `
+        SELECT s.name, ss.vocab_band, ss.phonics_band, ss.writing_band, ss.listening_band, ss.overall_band
+        FROM students s
+        LEFT JOIN student_scores ss ON s.student_id = ss.student_id
+        `;
+    let params = [];
+
+    // If the user is a 'parent', filter by their username
+    if (role === 'parent') {
+        sql += ' WHERE parent_username = ?';
+        params = [username];
+    }
+    // If 'tutor', no WHERE clause is added, so they see all students
+
+    pool.query(sql, params, (err, rows) => {
+        if (err) {
+            console.error('Error fetching students:', err);
+            return res.status(500).json({ error: 'Failed to fetch' });
+        }
+        res.json(rows);
+    });
+});
+
+app.post('/login', (req, res) => {
+  const { username, password, role } = req.body; // Make sure to get 'role' from the frontend
+
+  // Now we check username, password, AND role
+  const sql = 'SELECT username, role FROM users WHERE username = ? AND password = ? AND role = ?';
+  
+  pool.query(sql, [username, password, role], (err, results) => {
     if (err) {
-      console.error('Error fetching students:', err);
-      return res.status(500).json({ error: 'Failed to fetch students' });
+      console.error('Login error:', err);
+      return res.status(500).json({ error: 'Database error' });
     }
 
-    res.json(rows);
+    if (results.length > 0) {
+      res.json({ success: true, role: results[0].role });
+    } else {
+      // This will now trigger if the role doesn't match the user in the DB
+      res.status(401).json({ error: 'Invalid username, password, or role selected' });
+    }
   });
 });
 

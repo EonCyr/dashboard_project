@@ -24,6 +24,10 @@ body {
   padding: 32px 24px 48px;
 }
 
+.dashboard.tutor { border-top: 5px solid #2563eb; } /* Blue for Tutors */
+
+.dashboard.parent { border-top: 5px solid #16a34a; } /* Green for Parents */
+
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -32,6 +36,8 @@ body {
   gap: 16px;
   color: #E91626;
 }
+
+.parent-detailed-view { display: grid; grid-template-columns: 1fr 1fr; }
 
 h1 {
   margin: 0;
