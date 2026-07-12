@@ -1,6 +1,12 @@
 # Dashboard Project
 
-This project is a full-stack web application designed to [insert a brief 1-sentence description of your project's goal, e.g., "monitor and visualize real-time system metrics"].
+This project is a full-stack web application developed in partnership with the Dyslexia Association of Singapore (DAS). The platform serves as a centralized, secure data hub designed to bridge the communication gap between tutors and parents, fostering a transparent and collaborative environment for neurodivergent learners. By centralizing student performance data, the portal enables stakeholders to move beyond static reports toward a more dynamic understanding of a student’s unique learning journey.
+
+At its core, the dashboard prioritizes clarity and growth-oriented insights, ensuring that data presentation is meaningful and accessible. By replacing generic grade reporting with nuanced metrics across vocabulary, phonics, writing, and listening, the platform empowers tutors to deliver targeted pedagogical interventions while providing parents with actionable, strengths-based progress updates. This approach directly supports the DAS mission by ensuring that data serves as a tool for encouragement rather than just assessment, helping to build a "growth mindset" for every student. Through this collaborative and accessible design, the project seeks to establish a high standard for professional communication in educational settings, ultimately improving learning outcomes for students supported by the DAS.
+
+
+
+.
 
 ## Project Structure
 
