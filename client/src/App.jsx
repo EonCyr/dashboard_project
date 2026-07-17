@@ -75,21 +75,28 @@ function App() {
       }
 
       const students = await response.json();
-      const studentMetrics = students.map((student) => ({
-        name: student.name,
-        title: student.name, // Keep both for compatibility with your map functions
-        value: student.overall_band || 'N/A', // Used by tutor view
-        overall: student.overall_band,        // Used by parent view
-        vocab_band: student.vocab_band,
-        phonics_band: student.phonics_band,
-        writing_band: student.writing_band,
-        listening_band: student.listening_band,
-        // Add the details object for the tutor view sub-details
-        details: {
-          vocab: student.vocab_band,
-          phonics: student.phonics_band
+      const studentMetrics = students.map((student) => {
+        let parsedScores = student.scores;
+
+        if (typeof parsedScores === 'string') {
+          try {
+            parsedScores = JSON.parse(parsedScores);
+          } catch (error) {
+            parsedScores = {};
+          }
         }
-      }));
+
+        return {
+          name: student.name,
+          band: student.band || 'N/A',
+          scores: {
+            vocab: parsedScores?.vocab || 'N/A',
+            pap: parsedScores?.['pa/phonics'] || 'N/A',
+            writing: parsedScores?.writing || 'N/A',
+            lrc: parsedScores?.['listening/readingcomprehension'] || 'N/A',
+          },
+        };
+      });
       setMetrics(studentMetrics);
     } catch (error) {
       console.error('Error loading student data:', error);
@@ -133,7 +140,7 @@ if (!isLoggedIn) {
         >
           <option value="">Select Role</option>
           <option value="parent">Parent</option>
-          <option value="tutor">Tutor</option>
+          <option value="therapist">Therapist</option>
         </select>
         
         <button type="submit">Log In</button>
@@ -146,7 +153,7 @@ if (!isLoggedIn) {
     <div className={`dashboard ${role}`}>
       <header className="dashboard-header">
         <div>
-          <h1>{role === 'tutor' ? 'Tutor Management Dashboard' : 'Parent Progress Portal'}</h1>
+          <h1>{role === 'therapist' ? 'Therapist Management Dashboard' : 'Parent Progress Portal'}</h1>
         </div>
       </header>
 
@@ -165,17 +172,14 @@ if (!isLoggedIn) {
           </div>
         ) : (
           <div className="card-grid">
-              {role === 'tutor' ? (
-                // Tutor view: remains the same
+              {role === 'therapist' ? (
+                // Therapist view: remains the same
                 metrics.map((item) => (
                   <article className="data-card" key={item.name}>
                     <p className="card-label">{item.name}</p>
-                    {/* This now displays the overall_band fetched from student_scores */}
-                    <h3>{item.value}</h3> 
-                    
-                    {/* Optional: Show small sub-details if you want */}
+                    <h3>{item.band}</h3> 
                     <div className="sub-details" style={{ fontSize: '0.75rem', color: '#888' }}>
-                      V: {item.details.vocab || '-'} | P: {item.details.phonics || '-'}
+                      V: {item.scores.vocab || '-'} | P: {item.scores.pap || '-'}
                     </div>
                   </article>
                 ))
@@ -184,16 +188,16 @@ if (!isLoggedIn) {
                 metrics.flatMap((student) => {
                   // Define the individual metrics to display
                   const scoreCards = [
-                    { label: 'Vocab', value: student.vocab_band },
-                    { label: 'Phonics', value: student.phonics_band },
-                    { label: 'Writing', value: student.writing_band },
-                    { label: 'Listening', value: student.listening_band },
+                    { label: 'Vocab', value: student.scores.vocab },
+                    { label: 'Phonics', value: student.scores.pap },
+                    { label: 'Writing', value: student.scores.writing },
+                    { label: 'Listening', value: student.scores.lrc },
                   ];
 
                   // Return the cards for this specific student
                   return scoreCards.map((score) => (
-                    <article className="data-card" key={`${student.title}-${score.label}`}>
-                      <p className="card-label">{student.title}: {score.label}</p>
+                    <article className="data-card" key={`${student.name}-${score.label}`}>
+                      <p className="card-label">{student.name}: {score.label}</p>
                       <h3>{score.value || 'N/A'}</h3>
                     </article>
                   ));
@@ -205,10 +209,10 @@ if (!isLoggedIn) {
         <div className="content-row">
           <div className="chart-wrapper">{createLineChart()}</div>
           <aside className="side-panel">
-            <h3>{role === 'tutor' ? 'Tutor Tools' : 'Parent Resources'}</h3>
-              {role === 'tutor' ? (
+            <h3>{role === 'therapist' ? 'Therapist Tools' : 'Parent Resources'}</h3>
+              {role === 'therapist' ? (
                 <ul>
-                  <li><button>Add New Grade</button></li>
+                  <li><button>Add New Assessment</button></li>
                   <li><button>Message All Parents</button></li>
                 </ul>
               ) : (
