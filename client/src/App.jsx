@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import { createLineChart } from './linechart.jsx'
+import CommunicationThread from './Communications.jsx';
 
 const initialMetrics = [
   { title: 'Metric 1', value: 'A', detail: 'On track' },
@@ -8,6 +9,8 @@ const initialMetrics = [
   { title: 'Metric 3', value: 'C', detail: 'Needs attention' },
   { title: 'Metric 4', value: '98.2%', detail: 'amazing' },
 ]
+
+const [activeThread, setActiveThread] = useState(null); // { studentId, studentName } or null
 
 function App() {
   // Authentication state
@@ -76,6 +79,7 @@ function App() {
 
       const students = await response.json();
       const studentMetrics = students.map((student) => ({
+        studentId: student.student_id,
         name: student.name,
         title: student.name, // Keep both for compatibility with your map functions
         value: student.overall_band || 'N/A', // Used by tutor view
@@ -200,6 +204,32 @@ if (!isLoggedIn) {
                 })
               )}
             </div>
+        )}
+
+        {metrics.length > 0 && (
+          <div className="comm-launcher">
+            <h3>Home & Progress Notes</h3>
+            <ul>
+              {[...new Map(metrics.map((m) => [m.studentId, m])).values()].map((student) => (
+                <li key={student.studentId}>
+                  {student.name}{' '}
+                  <button onClick={() => setActiveThread({ studentId: student.studentId, studentName: student.name })}>
+                    Open thread
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {activeThread && (
+          <CommunicationThread
+            studentId={activeThread.studentId}
+            studentName={activeThread.studentName}
+            role={role}
+            username={username}
+            onClose={() => setActiveThread(null)}
+          />
         )}
 
         <div className="content-row">

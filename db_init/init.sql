@@ -58,3 +58,18 @@ INSERT INTO student_scores (student_id, vocab_band, phonics_band, writing_band, 
 ('001', 'A+', 'A', 'A', 'A-', 'A'),
 ('002', 'B+', 'C', 'B', 'C+', 'C'),
 ('003', 'B-', 'B', 'C', 'B-', 'B-');
+
+--For Communications
+CREATE TABLE IF NOT EXISTS communications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id VARCHAR(50) NOT NULL,
+    sender_username VARCHAR(50) NOT NULL,
+    sender_role ENUM('parent', 'tutor') NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(student_id),
+    FOREIGN KEY (sender_username) REFERENCES users(username)
+);
+
+CREATE INDEX idx_comm_student ON communications(student_id);
