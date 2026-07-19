@@ -39,26 +39,47 @@ connectWithRetry();
 app.get('/students', (req, res) => {
     const { role, username } = req.query;
 
-    let sql = `
-        SELECT s.name, ss.vocab_band, ss.phonics_band, ss.writing_band, ss.listening_band, ss.overall_band
-        FROM students s
-        LEFT JOIN student_scores ss ON s.student_id = ss.student_id
-        `;
-    let params = [];
+    const userLookupSql = 'SELECT userid FROM users WHERE username = ?';
 
-    // If the user is a 'parent', filter by their username
-    if (role === 'parent') {
-        sql += ' WHERE parent_username = ?';
-        params = [username];
-    }
-    // If 'tutor', no WHERE clause is added, so they see all students
-
-    pool.query(sql, params, (err, rows) => {
-        if (err) {
-            console.error('Error fetching students:', err);
+    pool.query(userLookupSql, [username], (userErr, userRows) => {
+        if (userErr) {
+            console.error('Error finding user:', userErr);
             return res.status(500).json({ error: 'Failed to fetch' });
         }
-        res.json(rows);
+
+        if (!userRows.length) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const userId = userRows[0].userid;
+        let sql = `
+            SELECT s.name, assess.scores, assess.band
+            FROM students s
+            LEFT JOIN assessments assess ON s.studentid = assess.studentid
+            `;
+        let params = [];
+
+        if (role === 'parent') {
+            sql += `
+                INNER JOIN parent_student ps ON ps.studentid = s.studentid
+                WHERE ps.parentid = ?
+            `;
+            params = [userId];
+        } else if (role === 'therapist') {
+            sql += `
+                INNER JOIN therapist_student ts ON ts.studentid = s.studentid
+                WHERE ts.therapistid = ?
+            `;
+            params = [userId];
+        }
+
+        pool.query(sql, params, (err, rows) => {
+            if (err) {
+                console.error('Error fetching students:', err);
+                return res.status(500).json({ error: 'Failed to fetch' });
+            }
+            res.json(rows);
+        });
     });
 });
 
