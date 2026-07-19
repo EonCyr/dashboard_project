@@ -1,13 +1,7 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import { createLineChart } from './linechart.jsx'
-
-const initialMetrics = [
-  { title: 'Metric 1', value: 'A', detail: 'On track' },
-  { title: 'Metric 2', value: '2', detail: 'get good' },
-  { title: 'Metric 3', value: 'C', detail: 'Needs attention' },
-  { title: 'Metric 4', value: '98.2%', detail: 'amazing' },
-]
+import { loadData } from './loadData.jsx' 
 
 function App() {
   // Authentication state
@@ -17,7 +11,7 @@ function App() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState(''); 
 
-  // dashboard states
+  // Dashboard states
   const [data, setData] = useState(null);
   const [metrics, setMetrics] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +22,7 @@ function App() {
   e.preventDefault();
   setErrorMessage(''); // Clear previous errors
 
-  try {
+  try { //Tries to fetch the login API
     const response = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -64,6 +58,7 @@ function App() {
     }
   }, [isLoggedIn]);
 
+  /*
   // Function to load student data from the API
   const loadData = async () => {
     setIsLoading(true);
@@ -97,7 +92,7 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }; */
 
 // --- 1. LOGIN SCREEN ---
 if (!isLoggedIn) {
@@ -106,14 +101,12 @@ if (!isLoggedIn) {
       <form className="login-card" onSubmit={handleLogin}>
         <h2>Dashboard Login</h2>
         
-        {/* ADDED: Display error if it exists */}
         {errorMessage && <p style={{ color: 'red', fontWeight: 'bold' }}>{errorMessage}</p>}
         
         <input 
           type="text" 
           placeholder="Username" 
           value={username} 
-          // UPDATED: Clears error when user types
           onChange={(e) => { setUsername(e.target.value); setErrorMessage(''); }} 
           required 
         />
@@ -153,8 +146,8 @@ if (!isLoggedIn) {
       <section className="panel">
         <h2>Student Metrics</h2>
         {data && <p>API Response: {data}</p>}
-
-        <button className="load-button" onClick={loadData} disabled={isLoading}>
+    
+        <button className="load-button" onClick={() => loadData(role, username, setMetrics, setIsLoading)} disabled={isLoading}>
           {isLoading ? 'Loading...' : 'Load Data'}
         </button>
 
@@ -170,10 +163,10 @@ if (!isLoggedIn) {
                 metrics.map((item) => (
                   <article className="data-card" key={item.name}>
                     <p className="card-label">{item.name}</p>
-                    {/* This now displays the overall_band fetched from student_scores */}
+                    {/* this displays the overall_band fetched from student_scores */}
                     <h3>{item.value}</h3> 
                     
-                    {/* Optional: Show small sub-details if you want */}
+                    {/* Showing of smaller sub components of this project */}
                     <div className="sub-details" style={{ fontSize: '0.75rem', color: '#888' }}>
                       V: {item.details.vocab || '-'} | P: {item.details.phonics || '-'}
                     </div>

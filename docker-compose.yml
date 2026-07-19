@@ -36,5 +36,13 @@ services:
     depends_on:
       - server
 
+  data-ingestor:
+    build: ./ingestor
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - db
+    profiles: ["manual"]
+
 volumes:
   mysql_data:
