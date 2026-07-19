@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS parents (
 );
 
 CREATE TABLE IF NOT EXISTS students (
-    studentid INT AUTO_INCREMENT PRIMARY KEY,
+    studentid INT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     age INT NOT NULL,
     current_band VARCHAR(10) NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS assessments (
     assessmentid INT AUTO_INCREMENT PRIMARY KEY,
     therapistid INT,
     studentid INT,
-    date_of_assessment DATE NOT NULL,
+    semester VARCHAR(20) NOT NULL,
     centre VARCHAR(100) NOT NULL,
     scores JSON,
     CONSTRAINT check_scores CHECK (JSON_SCHEMA_VALID(
@@ -115,7 +115,7 @@ INSERT IGNORE INTO parent_student (parentid, studentid, relationship) VALUES
 (3, 2, 'Father'),
 (4, 3, 'Guardian');
 
-INSERT IGNORE INTO assessments (assessmentid, therapistid, studentid, date_of_assessment, centre, scores, band) VALUES
-(1, 1, 1, '2026-06-01', 'centre1', '{"vocab":"A","pa/phonics":"B","writing":"A","listening/readingcomprehension":"A"}', 'A'),
-(2, 1, 2, '2026-06-10', 'centre1', '{"vocab":"B","pa/phonics":"C","writing":"B","listening/readingcomprehension":"B"}', 'B'),
-(3, 1, 3, '2026-06-15', 'centre1', '{"vocab":"C","pa/phonics":"B","writing":"C","listening/readingcomprehension":"B"}', 'B');
+INSERT IGNORE INTO assessments (assessmentid, therapistid, studentid, semester, centre, scores, band) VALUES
+(1, 1, 1, '2022 Sem 1', 'centre1', '{"vocab":"A","pa/phonics":"B","writing":"A","listening/readingcomprehension":"A"}', 'A'),
+(2, 1, 2, '2022 Sem 2', 'centre1', '{"vocab":"B","pa/phonics":"C","writing":"B","listening/readingcomprehension":"B"}', 'B'),
+(3, 1, 3, '2023 Sem 1', 'centre1', '{"vocab":"C","pa/phonics":"B","writing":"C","listening/readingcomprehension":"B"}', 'B');

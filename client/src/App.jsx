@@ -58,48 +58,6 @@ function App() {
     }
   }, [isLoggedIn]);
 
-  /*
-  // Function to load student data from the API
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/students?role=${role}&username=${username}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to load student data');
-      }
-
-      const students = await response.json();
-      const studentMetrics = students.map((student) => {
-        let parsedScores = student.scores;
-
-        if (typeof parsedScores === 'string') {
-          try {
-            parsedScores = JSON.parse(parsedScores);
-          } catch (error) {
-            parsedScores = {};
-          }
-        }
-
-        return {
-          name: student.name,
-          band: student.band || 'N/A',
-          scores: {
-            vocab: parsedScores?.vocab || 'N/A',
-            pap: parsedScores?.['pa/phonics'] || 'N/A',
-            writing: parsedScores?.writing || 'N/A',
-            lrc: parsedScores?.['listening/readingcomprehension'] || 'N/A',
-          },
-        };
-      });
-      setMetrics(studentMetrics);
-    } catch (error) {
-      console.error('Error loading student data:', error);
-      setMetrics([{ title: 'Error', value: 'No data', detail: 'Unable to load student records' }]);
-    } finally {
-      setIsLoading(false);
-    }
-  }; */
 
 // --- 1. LOGIN SCREEN ---
 if (!isLoggedIn) {
@@ -141,7 +99,7 @@ if (!isLoggedIn) {
     </div>
   );
 }
-
+  
   return (
     <div className={`dashboard ${role}`}>
       <header className="dashboard-header">
@@ -153,7 +111,7 @@ if (!isLoggedIn) {
       <section className="panel">
         <h2>Student Metrics</h2>
         {data && <p>API Response: {data}</p>}
-    
+
         <button className="load-button" onClick={() => loadData(role, username, setMetrics, setIsLoading)} disabled={isLoading}>
           {isLoading ? 'Loading...' : 'Load Data'}
         </button>
@@ -184,10 +142,10 @@ if (!isLoggedIn) {
                 metrics.flatMap((student) => {
                   // Define the individual metrics to display
                   const scoreCards = [
-                    { label: 'Vocab', value: student.scores.vocab },
-                    { label: 'Phonics', value: student.scores.pap },
-                    { label: 'Writing', value: student.scores.writing },
-                    { label: 'Listening', value: student.scores.lrc },
+                    { label: 'Vocab', value: student.scores?.vocab },
+                    { label: 'Phonics', value: student.scores?.pap },
+                    { label: 'Writing', value: student.scores?.writing },
+                    { label: 'Listening', value: student.scores?.lrc },
                   ];
 
                   // Return the cards for this specific student

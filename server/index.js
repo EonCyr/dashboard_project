@@ -53,7 +53,7 @@ app.get('/students', (req, res) => {
 
         const userId = userRows[0].userid;
         let sql = `
-            SELECT s.name, assess.scores, assess.band
+            SELECT s.name, assess.scores, assess.band AS value
             FROM students s
             LEFT JOIN assessments assess ON s.studentid = assess.studentid
             `;

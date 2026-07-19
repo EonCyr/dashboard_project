@@ -40,6 +40,11 @@ services:
     build: ./ingestor
     volumes:
       - ./data:/app/data
+    environment:
+      DB_HOST: db  # ADD THIS LINE
+      DB_USER: root
+      DB_PASSWORD: "${DB_PASSWORD:-password}"
+      DB_NAME: "${DB_NAME:-dashboard_db}"
     depends_on:
       - db
     profiles: ["manual"]
