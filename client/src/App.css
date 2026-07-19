@@ -146,3 +146,63 @@ h1 {
     flex-basis: auto;
   }
 }
+
+
+/* Container to center everything */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f4f7f6;
+  padding: 20px;
+}
+
+/* The login card */
+.login-card {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.login-card h2 {
+  margin: 0 0 0.5rem 0;
+  text-align: center;
+  color: #333;
+}
+
+/* Styling inputs to look modern */
+.login-card input, .login-card select {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.login-card input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* Primary button styling */
+.login-card button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.login-card button:hover {
+  background-color: #0056b3;
+}

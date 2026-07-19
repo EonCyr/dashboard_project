@@ -9,6 +9,12 @@ node_modules/
 # Docker Data - DONT REMOVE THIS LINE, IT IS USED FOR MYSQL DATA STORAGE
 mysql_data/
 
+# Legacy data folder
+data/*
+
+# Keeps the gitkeep folder
+!data/.gitkeep
+
 # OS Specific
 .DS_Store
 Thumbs.db
@@ -16,3 +22,4 @@ Thumbs.db
 # Build artifacts (if you run builds locally)
 dist/
 build/
+

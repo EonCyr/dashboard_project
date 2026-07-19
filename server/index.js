@@ -84,9 +84,9 @@ app.get('/students', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
-  const { username, password, role } = req.body; // Make sure to get 'role' from the frontend
+  const { username, password, role } = req.body; // Getting all the components needed to query the request
 
-  // Now we check username, password, AND role
+  // Check username, password, AND role if its valid in the database
   const sql = 'SELECT username, role FROM users WHERE username = ? AND password = ? AND role = ?';
   
   pool.query(sql, [username, password, role], (err, results) => {
@@ -98,7 +98,7 @@ app.post('/login', (req, res) => {
     if (results.length > 0) {
       res.json({ success: true, role: results[0].role });
     } else {
-      // This will now trigger if the role doesn't match the user in the DB
+      // If role or account is not valid, an error will be thrown
       res.status(401).json({ error: 'Invalid username, password, or role selected' });
     }
   });
