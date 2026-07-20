@@ -119,3 +119,24 @@ INSERT IGNORE INTO parent_student (parentid, studentid, relationship) VALUES
 -- (1, 1, 1, '2022 Sem 1', 'centre1', '{"vocab":"A","pa/phonics":"B","writing":"A","listening/readingcomprehension":"A"}', 'A'),
 -- (2, 1, 2, '2022 Sem 2', 'centre1', '{"vocab":"B","pa/phonics":"C","writing":"B","listening/readingcomprehension":"B"}', 'B'),
 -- (3, 1, 3, '2023 Sem 1', 'centre1', '{"vocab":"C","pa/phonics":"B","writing":"C","listening/readingcomprehension":"B"}', 'B');
+
+
+INSERT IGNORE INTO assessments (assessmentid, therapistid, studentid, semester, centre, scores, band) VALUES
+(1, 1, 1, '2022 Sem 1', 'centre1',
+  '{"vocab":{"band":"B+","raw_score":78},"pa/phonics":{"band":"B","raw_score":72},"writing":{"band":"B","raw_score":70},"listening/readingcomprehension":{"band":"B-","raw_score":68}}',
+  'B'),
+(2, 1, 1, '2022 Sem 2', 'centre1',
+  '{"vocab":{"band":"A-","raw_score":85},"pa/phonics":{"band":"A-","raw_score":83},"writing":{"band":"B+","raw_score":78},"listening/readingcomprehension":{"band":"B","raw_score":74}}',
+  'B+'),
+(3, 1, 1, '2023 Sem 1', 'centre1',
+  '{"vocab":{"band":"A+","raw_score":95},"pa/phonics":{"band":"A","raw_score":90},"writing":{"band":"A","raw_score":88},"listening/readingcomprehension":{"band":"A-","raw_score":85}}',
+  'A'),
+(4, 1, 2, '2022 Sem 1', 'centre1',
+  '{"vocab":{"band":"C","raw_score":55},"pa/phonics":{"band":"C-","raw_score":50},"writing":{"band":"C","raw_score":52},"listening/readingcomprehension":{"band":"D+","raw_score":45}}',
+  'C-'),
+(5, 1, 2, '2022 Sem 2', 'centre1',
+  '{"vocab":{"band":"B","raw_score":68},"pa/phonics":{"band":"C+","raw_score":58},"writing":{"band":"B-","raw_score":60},"listening/readingcomprehension":{"band":"C","raw_score":52}}',
+  'C+'),
+(6, 1, 3, '2023 Sem 1', 'centre1',
+  '{"vocab":{"band":"C+","raw_score":58},"pa/phonics":{"band":"C","raw_score":54},"writing":{"band":"D+","raw_score":45},"listening/readingcomprehension":{"band":"C","raw_score":52}}',
+  'C-');

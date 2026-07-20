@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { createLineChart } from './linechart.jsx'
 import { loadData } from './loadData.jsx' 
+import ReportDownload from './ReportDownload.jsx'
+import { ClinicalStudentSelector } from './ClinicalReportDownload.jsx'
 
 function App() {
   // Authentication state
@@ -182,17 +184,25 @@ if (!isLoggedIn) {
           <div className="chart-wrapper">{createLineChart()}</div>
           <aside className="side-panel">
             <h3>{role === 'therapist' ? 'Therapist Tools' : 'Parent Resources'}</h3>
-              {role === 'therapist' ? (
-                <ul>
-                  <li><button>Add New Assessment</button></li>
-                  <li><button>Message All Parents</button></li>
-                </ul>
-              ) : (
-                <ul>
-                  <li><p>Upcoming Parent-Teacher Meeting</p></li>
-                  <li><button>Contact Tutor</button></li>
-                </ul>
+           {role === 'therapist' ? (
+            <>
+              <ul>
+                <li><button>Add New Assessment</button></li>
+                <li><button>Message All Parents</button></li>
+              </ul>
+              {metrics.length > 0 && metrics[0].id && (
+                <ClinicalStudentSelector metrics={metrics} username={username} />
               )}
+            </>
+          ) : (
+            <>
+              <ul>
+                <li><p>Upcoming Parent-Teacher Meeting</p></li>
+                <li><button>Contact Tutor</button></li>
+              </ul>
+              <ReportDownload studentId={metrics[0]?.id} username={username} />
+            </>
+          )}
           </aside>
         </div>
       </section>
