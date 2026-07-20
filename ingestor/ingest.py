@@ -27,7 +27,6 @@ def format_date(val):
         return '2000-01-01'
 
 for _, row in df.iterrows():
-    # 1. Clean the ID
     raw_id = str(row.get('Student_ID'))
     clean_id_str = raw_id.lower().replace('student', '').strip()
     
@@ -66,7 +65,48 @@ for _, row in df.iterrows():
         VALUES (%s, %s, %s, %s)
     """, (student_id, '2000-10-10', sch_level, months_to_48))
 
-    # 4. Always insert the assessment record
+
+    # 3. Handle Therapist Creation (Ensuring no duplicates)
+    teacher_id = row.get('Teacher_ID')
+    if pd.notnull(teacher_id):
+        pwd = 'pw123' # Default password for new therapist users
+        try:
+            therapist_userid = int(str(teacher_id).lower().replace('teacher', '').strip())
+        except ValueError:
+                therapist_userid = None
+
+        if therapist_userid:
+            # Check if therapist user entry already exists
+            cursor.execute("SELECT userid FROM users WHERE userid = %s", (therapist_userid,))
+            therapist_exists = cursor.fetchone()
+            
+            if not therapist_exists:
+                # Create default user entry for the therapist
+                cursor.execute("""
+                    INSERT INTO users (userid, username, password, email, phone_number, role) 
+                    VALUES (%s, %s, %s, %s, %s, 'therapist')
+                """, (
+                    therapist_userid, 
+                    f"therapist_{therapist_userid}", 
+                    pwd, 
+                    f"therapist_{therapist_userid}@example.com", 
+                    "0000000000"
+                ))
+                
+                # Create corresponding therapist profile entry
+                cursor.execute("""
+                    INSERT INTO therapists (userid, centre) 
+                    VALUES (%s, %s)
+                """, (therapist_userid, centre))
+            
+            # 4. Link Student to Therapist in Junction Table
+            cursor.execute("""
+                INSERT IGNORE INTO therapist_student (studentid, therapistid) 
+                VALUES (%s, %s)
+            """, (student_id, therapist_userid))
+
+
+    # Always insert the assessment record
     scores_dict = {
         "vocab": str(get_clean_val(row.get("Picture_Naming"), "N/A")),
         "pa/phonics": str(get_clean_val(row.get("Phonics"), "N/A")),
