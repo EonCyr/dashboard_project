@@ -99,7 +99,7 @@ if (!isLoggedIn) {
     </div>
   );
 }
-  
+
   return (
     <div className={`dashboard ${role}`}>
       <header className="dashboard-header">
@@ -122,40 +122,58 @@ if (!isLoggedIn) {
             <p>No student data loaded. Please click the "Load Data" button to view progress.</p>
           </div>
         ) : (
-          <div className="card-grid">
+          <div>
               {role === 'therapist' ? (
-                // Therapist view: remains the same
-                metrics.map((item) => (
-                  <article className="data-card" key={item.name}>
-                    <p className="card-label">{item.name}</p>
-                    {/* this displays the overall_band fetched from student_scores */}
-                    <h3>{item.value}</h3> 
-                    
-                    {/* Showing of smaller sub components of this project */}
-                    <div className="sub-details" style={{ fontSize: '0.75rem', color: '#888' }}>
-                      V: {item.scores.vocab || '-'} | P: {item.scores.pap || '-'}
-                    </div>
-                  </article>
-                ))
+                // Therapist view: Rendered as a structured table layout
+                <div className="table-responsive" style={{ overflowX: 'auto', marginTop: '1rem' }}>
+                  <table className="student-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #ccc', backgroundColor: '#f9f9f9' }}>
+                        <th style={{ padding: '12px' }}>Student ID</th>
+                        <th style={{ padding: '12px' }}>Overall Band</th>
+                        <th style={{ padding: '12px' }}>Vocab / Details</th>
+                        <th style={{ padding: '12px' }}>Pa / Phonics</th>
+                        <th style={{ padding: '12px' }}>Writing</th>
+                        <th style={{ padding: '12px' }}>Listening / Reading</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {metrics.map((item) => (
+                        <tr key={item.id} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ padding: '12px', fontWeight: 'bold' }}>{item.id}</td>
+                          <td style={{ padding: '12px' }}>
+                            <span className="badge" style={{ padding: '4px 8px', background: '#e0e7ff', borderRadius: '4px', fontWeight: 'bold' }}>
+                              {item.value}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.vocab || '-'}</td>
+                          <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.pap || '-'}</td>
+                          <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.writing || '-'}</td>
+                          <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.lrc || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
                 // Parent view: Updated to display 4 cards per student
-                metrics.flatMap((student) => {
-                  // Define the individual metrics to display
-                  const scoreCards = [
-                    { label: 'Vocab', value: student.scores?.vocab },
-                    { label: 'Phonics', value: student.scores?.pap },
-                    { label: 'Writing', value: student.scores?.writing },
-                    { label: 'Listening', value: student.scores?.lrc },
-                  ];
+                <div className="card-grid">
+                  {metrics.flatMap((student) => {
+                    const scoreCards = [
+                      { label: 'Vocab', value: student.scores?.vocab },
+                      { label: 'Phonics', value: student.scores?.pap },
+                      { label: 'Writing', value: student.scores?.writing },
+                      { label: 'Listening', value: student.scores?.lrc },
+                    ];
 
-                  // Return the cards for this specific student
-                  return scoreCards.map((score) => (
-                    <article className="data-card" key={`${student.name}-${score.label}`}>
-                      <p className="card-label">{student.name}: {score.label}</p>
-                      <h3>{score.value || 'N/A'}</h3>
-                    </article>
-                  ));
-                })
+                    return scoreCards.map((score) => (
+                      <article className="data-card" key={`${student.id}-${score.label}`}>
+                        <p className="card-label">{student.id}: {score.label} | {student.semester}</p>
+                        <h3>{score.value || 'N/A'}</h3>
+                      </article>
+                    ));
+                  })}
+                </div>
               )}
             </div>
         )}

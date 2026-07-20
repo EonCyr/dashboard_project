@@ -108,10 +108,29 @@ for _, row in df.iterrows():
 
     # Always insert the assessment record
     scores_dict = {
-        "vocab": str(get_clean_val(row.get("Picture_Naming"), "N/A")),
-        "pa/phonics": str(get_clean_val(row.get("Phonics"), "N/A")),
-        "writing": str(get_clean_val(row.get("Narrative_Writing"), "N/A")),
-        "listening/readingcomprehension": str(get_clean_val(row.get("Word_Reading_Accuracy"), "N/A"))
+        "vocab": {
+            "picture_naming": str(get_clean_val(row.get("Picture_Naming"), "N/A")),
+            "picture_description": str(get_clean_val(row.get("Picture_Description"), "N/A")),
+        },
+        "pa/phonics": {
+            "pa_identification": str(get_clean_val(row.get("PA_Identification"), "N/A")),
+            "phonics": str(get_clean_val(row.get("Phonics"), "N/A")),
+            "fluency": str(get_clean_val(row.get("FluencyMark"), "N/A")),
+            "word_spelling": str(get_clean_val(row.get("Word_Spelling"), "N/A"))
+        },
+        "writing": {
+            "Letter_Formation": str(get_clean_val(row.get("Letter_Formation"), "N/A")),
+            "edit_d1": str(get_clean_val(row.get("Edit_D1"), "N/A")),
+            "edit_d2": str(get_clean_val(row.get("Edit_D2"), "N/A")),
+            "edit_d3": str(get_clean_val(row.get("Edit_D3"), "N/A")),
+            "narrative_writing": str(get_clean_val(row.get("Narrative_Writing"), "N/A")),
+            "exposition_writing": str(get_clean_val(row.get("Exposition_Writing"), "N/A")),
+        },
+        "listening/readingcomprehension": {
+            "persuasive_writing": str(get_clean_val(row.get("Persuasive_Writing"), "N/A")),
+            "listening_comprehension": str(get_clean_val(row.get("LS_Comprehension"), "N/A")),
+            "reading_comprehension": str(get_clean_val(row.get("RD_Comprehension"), "N/A"))
+        }
     }
     scores_json = json.dumps(scores_dict)
     sem = get_clean_val(row.get('Semester'), "Unknown")

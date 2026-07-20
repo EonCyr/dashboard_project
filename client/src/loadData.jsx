@@ -6,19 +6,31 @@ export const loadData = async (role, username, setMetrics, setIsLoading) => {
     const students = await response.json();
     
     const studentMetrics = students.map((student) => {
-      // If scores is already an object, use it; if string, parse it
       const parsedScores = typeof student.scores === 'string' 
         ? JSON.parse(student.scores) 
         : student.scores || {};
 
+      // Helper to convert sub-objects into readable strings if they are objects
+      const formatScoreField = (field) => {
+        if (!field) return 'N/A';
+        if (typeof field === 'object') {
+          return Object.entries(field)
+            .map(([key, val]) => `${key.replace(/_/g, ' ')}: ${val}`)
+            .join(' | ');
+        }
+        return field;
+      };
+
       return {
+        id: student.studentid,
         name: student.name,
-        value: student.value || student.band || 'N/A', // Map band to value for the <h3>
+        value: student.value || student.band || 'N/A',
+        semester: student.semester || 'N/A',
         scores: {
-          vocab: parsedScores?.vocab || 'N/A',
-          pap: parsedScores?.['pa/phonics'] || 'N/A',
-          writing: parsedScores?.writing || 'N/A',
-          lrc: parsedScores?.['listening/readingcomprehension'] || 'N/A',
+          vocab: formatScoreField(parsedScores.vocab),
+          pap: formatScoreField(parsedScores['pa/phonics']),
+          writing: formatScoreField(parsedScores.writing),
+          lrc: formatScoreField(parsedScores['listening/readingcomprehension']),
         },
       };
     });

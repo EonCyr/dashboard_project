@@ -36,6 +36,54 @@ const connectWithRetry = () => {
 
 connectWithRetry();
 
+// app.get('/students', (req, res) => {
+//     const { role, username } = req.query;
+
+//     const userLookupSql = 'SELECT userid FROM users WHERE username = ?';
+
+//     pool.query(userLookupSql, [username], (userErr, userRows) => {
+//         if (userErr) {
+//             console.error('Error finding user:', userErr);
+//             return res.status(500).json({ error: 'Failed to fetch' });
+//         }
+
+//         if (!userRows.length) {
+//             return res.status(404).json({ error: 'User not found' });
+//         }
+
+//         const userId = userRows[0].userid;
+//         let sql = `
+//             SELECT s.studentid, assess.scores, assess.band AS value
+//             FROM students s
+//             LEFT JOIN assessments assess ON s.studentid = assess.studentid
+//             `;
+//         let params = [];
+
+//         if (role === 'parent') {
+//             sql += `
+//                 INNER JOIN parent_student ps ON ps.studentid = s.studentid
+//                 WHERE ps.parentid = ?
+//             `;
+//             params = [userId];
+//         } else if (role === 'therapist') {
+//             sql += `
+//                 INNER JOIN therapist_student ts ON ts.studentid = s.studentid
+//                 WHERE ts.therapistid = ?
+//             `;
+//             params = [userId];
+//         }
+
+
+//         pool.query(sql, params, (err, rows) => {
+//             if (err) {
+//                 console.error('Error fetching students:', err);
+//                 return res.status(500).json({ error: 'Failed to fetch' });
+//             }
+//             res.json(rows);
+//         });
+//     });
+// });
+
 app.get('/students', (req, res) => {
     const { role, username } = req.query;
 
@@ -52,27 +100,58 @@ app.get('/students', (req, res) => {
         }
 
         const userId = userRows[0].userid;
-        let sql = `
-            SELECT s.studentid, assess.scores, assess.band AS value
-            FROM students s
-            LEFT JOIN assessments assess ON s.studentid = assess.studentid
-            `;
+        let sql = '';
         let params = [];
 
         if (role === 'parent') {
-            sql += `
-                INNER JOIN parent_student ps ON ps.studentid = s.studentid
-                WHERE ps.parentid = ?
+            // sql = `
+            //     SELECT s.studentid, assess.scores, assess.band , assess.semester AS value
+            //     FROM students s
+            //     LEFT JOIN assessments assess ON s.studentid = assess.studentid
+            //     INNER JOIN parent_student ps ON ps.studentid = s.studentid
+            //     WHERE ps.parentid = ?
+            // `;
+            sql = `
+                WITH ranked_assessments AS (
+                    SELECT 
+                        s.studentid, 
+                        s.name, 
+                        assess.scores, 
+                        assess.band AS value,
+                        assess.semester, -- <--- Added semester
+                        ROW_NUMBER() OVER (PARTITION BY s.studentid ORDER BY assess.semester DESC) AS row_num
+                    FROM students s
+                    INNER JOIN parent_student ps ON ps.studentid = s.studentid
+                    LEFT JOIN assessments assess ON s.studentid = assess.studentid
+                    WHERE ps.parentid = ?
+                )
+                SELECT studentid, name, scores, value, semester
+                FROM ranked_assessments
+                WHERE row_num = 1;
             `;
             params = [userId];
         } else if (role === 'therapist') {
-            sql += `
-                INNER JOIN therapist_student ts ON ts.studentid = s.studentid
-                WHERE ts.therapistid = ?
+            // Uses a Common Table Expression (CTE) to rank semesters descending per student, 
+            // ensuring only the latest semester (row_num = 1) is returned for each individual student.
+            sql = `
+                WITH ranked_assessments AS (
+                    SELECT 
+                        s.studentid, 
+                        s.name,
+                        assess.scores, 
+                        assess.band AS value,
+                        ROW_NUMBER() OVER (PARTITION BY s.studentid ORDER BY assess.semester DESC) AS row_num
+                    FROM students s
+                    INNER JOIN therapist_student ts ON ts.studentid = s.studentid
+                    LEFT JOIN assessments assess ON s.studentid = assess.studentid
+                    WHERE ts.therapistid = ?
+                )
+                SELECT studentid, scores, value, semester
+                FROM ranked_assessments
+                WHERE row_num = 1;
             `;
             params = [userId];
         }
-
 
         pool.query(sql, params, (err, rows) => {
             if (err) {

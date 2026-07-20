@@ -67,10 +67,10 @@ CREATE TABLE IF NOT EXISTS assessments (
             '{
                 "type": "object",
                 "properties": {
-                    "vocab": { "type": "string" },
-                    "pa/phonics": { "type": "string" },
-                    "writing": { "type": "string" },
-                    "listening/readingcomprehension": { "type": "string" }
+                    "vocab": { "type": "object" },
+                    "pa/phonics": { "type": "object" },
+                    "writing": { "type": "object" },
+                    "listening/readingcomprehension": { "type": "object" }
                 },
                 "required": ["vocab", "pa/phonics", "writing", "listening/readingcomprehension"]
             }',
@@ -115,7 +115,7 @@ INSERT IGNORE INTO parent_student (parentid, studentid, relationship) VALUES
 (3, 2, 'Father'),
 (4, 3, 'Guardian');
 
-INSERT IGNORE INTO assessments (assessmentid, therapistid, studentid, semester, centre, scores, band) VALUES
-(1, 1, 1, '2022 Sem 1', 'centre1', '{"vocab":"A","pa/phonics":"B","writing":"A","listening/readingcomprehension":"A"}', 'A'),
-(2, 1, 2, '2022 Sem 2', 'centre1', '{"vocab":"B","pa/phonics":"C","writing":"B","listening/readingcomprehension":"B"}', 'B'),
-(3, 1, 3, '2023 Sem 1', 'centre1', '{"vocab":"C","pa/phonics":"B","writing":"C","listening/readingcomprehension":"B"}', 'B');
+-- INSERT IGNORE INTO assessments (assessmentid, therapistid, studentid, semester, centre, scores, band) VALUES
+-- (1, 1, 1, '2022 Sem 1', 'centre1', '{"vocab":"A","pa/phonics":"B","writing":"A","listening/readingcomprehension":"A"}', 'A'),
+-- (2, 1, 2, '2022 Sem 2', 'centre1', '{"vocab":"B","pa/phonics":"C","writing":"B","listening/readingcomprehension":"B"}', 'B'),
+-- (3, 1, 3, '2023 Sem 1', 'centre1', '{"vocab":"C","pa/phonics":"B","writing":"C","listening/readingcomprehension":"B"}', 'B');
