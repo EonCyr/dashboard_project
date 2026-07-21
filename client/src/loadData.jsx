@@ -39,19 +39,37 @@ export const loadData = async (role, username, setMetrics, setIsLoading) => {
 
 
       // Helper to calculate total sum and format details string
+      // const processCategory = (categoryObj) => {
+      //   if (!categoryObj || typeof categoryObj !== 'object') {
+      //     return { total: 0, details: 'N/A' };
+      //   }
+        
+      //   const entries = Object.entries(categoryObj);
+      //   const total = entries.reduce((acc, [, val]) => acc + (parseFloat(val) || 0), 0);
+        
+      //   const details = entries
+      //     .map(([key, val]) => `${key.replace(/_/g, ' ')}: ${val ?? 'N/A'}`)
+      //     .join(' | ');
+
+      //   return { total, details };
+      // };
+
+      // Helper to calculate total sum and keep raw entries array
       const processCategory = (categoryObj) => {
         if (!categoryObj || typeof categoryObj !== 'object') {
-          return { total: 0, details: 'N/A' };
+          return { total: 0, items: [] };
         }
         
         const entries = Object.entries(categoryObj);
         const total = entries.reduce((acc, [, val]) => acc + (parseFloat(val) || 0), 0);
         
-        const details = entries
-          .map(([key, val]) => `${key.replace(/_/g, ' ')}: ${val ?? 'N/A'}`)
-          .join(' | ');
+        // Map into clean label-value pairs for row rendering
+        const items = entries.map(([key, val]) => ({
+          label: key.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()), // Capitalize first letter
+          value: val ?? 'N/A'
+        }));
 
-        return { total, details };
+        return { total, items };
       };
 
       const vocabData = processCategory(parsedScores.vocab);

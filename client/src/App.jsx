@@ -18,6 +18,17 @@ function App() {
   const [metrics, setMetrics] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  
+  // States for the student pop up
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
+
+  // Calculate sliced metrics for the current page
+  const indexOfLastRow = currentPage * rowsPerPage;
+  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+  const currentMetrics = metrics.slice(indexOfFirstRow, indexOfLastRow);
+  const totalPages = Math.ceil(metrics.length / rowsPerPage);
 
   // Login component
   const handleLogin = async (e) => {
@@ -127,60 +138,74 @@ if (!isLoggedIn) {
           <div>
               {role === 'therapist' ? (
                 // Therapist view: Rendered as a structured table layout
-                <div className="table-responsive" style={{ overflowX: 'auto', marginTop: '1rem' }}>
-                  <table className="student-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <div className="table-responsive" >
+                  <table className="student-table" >
                     <thead>
-                      <tr style={{ borderBottom: '2px solid #ccc', backgroundColor: '#f9f9f9' }}>
-                        <th style={{ padding: '12px' }}>Student ID</th>
-                        <th style={{ padding: '12px' }}>Overall Band</th>
-                        <th style={{ padding: '12px' }}>Vocab / Details</th>
-                        <th style={{ padding: '12px' }}>Pa / Phonics</th>
-                        <th style={{ padding: '12px' }}>Writing</th>
-                        <th style={{ padding: '12px' }}>Listening / Reading</th>
+                      <tr>
+                        <th>Student ID</th>
+                        <th>Overall Band</th>
+                        <th>Vocab / Details</th>
+                        <th>Pa / Phonics</th>
+                        <th>Writing</th>
+                        <th>Listening / Reading</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {metrics.map((item) => (
-                        <tr key={item.id} style={{ borderBottom: '1px solid #eee' }}>
-                          <td style={{ padding: '12px', fontWeight: 'bold' }}>{item.id}</td>
-                          <td style={{ padding: '12px' }}>
-                            <span className="badge" style={{ padding: '4px 8px', background: '#e0e7ff', borderRadius: '4px', fontWeight: 'bold' }}>
-                              {item.value}
-                            </span>
-                          </td>
-                            {/* Vocab Column */}
-                            <td style={{ padding: '12px', fontSize: '0.8rem' }}>
-                              <div style={{ fontWeight: 'bold', color: '#111' }}>Score: {item.scores.vocab.total}</div>
-                              {/* <div style={{ color: '#666', fontSize: '0.75rem' }}>{item.scores.vocab.details}</div> */}
+                      {currentMetrics.map((item) => (
+                        <tr key={item.id} className='student-row' onClick={() => setSelectedStudent(item)}>
+                          <td className="student-id-cell">
+                              {item.id} <br />
+                              <span className="student-semester">({item.semester})</span>
+                            </td>
+                            <td>
+                              <span className="band-badge">{item.value}</span>
+                              <div className="total-score-text">
+                                Total: <strong>{item.totalScore}</strong>
+                              </div>
+                            </td>
+                            {/* Student details */}
+                            <td className="score-cell">
+                              <div className="score-cell-total">Score: {item.scores.vocab.total}</div>
                             </td>
 
-                            {/* Phonics Column */}
-                            <td style={{ padding: '12px', fontSize: '0.8rem' }}>
-                              <div style={{ fontWeight: 'bold', color: '#111' }}>Score: {item.scores.pap.total}</div>
-                              {/* <div style={{ color: '#666', fontSize: '0.75rem' }}>{item.scores.pap.details}</div> */}
+                            <td className="score-cell">
+                              <div className="score-cell-total">Score: {item.scores.pap.total}</div>
                             </td>
 
-                            {/* Writing Column */}
-                            <td style={{ padding: '12px', fontSize: '0.8rem' }}>
-                              <div style={{ fontWeight: 'bold', color: '#111' }}>Score: {item.scores.writing.total}</div>
-                              {/* <div style={{ color: '#666', fontSize: '0.75rem' }}>{item.scores.writing.details}</div> */}
+                            <td className="score-cell">
+                              <div className="score-cell-total">Score: {item.scores.writing.total}</div>
                             </td>
 
-                            {/* Listening/Reading Column */}
-                            <td style={{ padding: '12px', fontSize: '0.8rem' }}>
-                              <div style={{ fontWeight: 'bold', color: '#111' }}>Score: {item.scores.lrc.total}</div>
-                              {/* <div style={{ color: '#666', fontSize: '0.75rem' }}>{item.scores.lrc.details}</div> */}
+                            <td className="score-cell">
+                              <div className="score-cell-total">Score: {item.scores.lrc.total}</div>
                             </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
 
-
-                          {/* <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.vocab || '-'}</td>
-                          <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.pap || '-'}</td>
-                          <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.writing || '-'}</td>
-                          <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.lrc || '-'}</td> */}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  {/* Pagination Controls */}
+                  <div className="pagination-container">
+                    <button 
+                      className="pagination-btn"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
+                      disabled={currentPage === 1}
+                    >
+                      &larr; Previous
+                    </button>
+                    
+                    <span className="pagination-info">
+                      Page {currentPage} of {totalPages || 1}
+                    </span>
+                    
+                    <button 
+                      className="pagination-btn"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
+                      disabled={currentPage === totalPages || totalPages === 0}
+                    >
+                      Next &rarr;
+                    </button>
+                  </div>
                 </div>
               ) : (
                 // Parent view: Updated to display 4 cards per student
@@ -204,6 +229,78 @@ if (!isLoggedIn) {
               )}
             </div>
         )}
+        {/* IN-DEPTH STUDENT MODAL OVERLAY */}
+          {selectedStudent && (
+            <div className="modal-overlay">
+              <div className="modal-card">
+                <h2>Student ID: {selectedStudent.id} In-Depth Report</h2>
+                <p className="modal-subtitle">
+                  Semester: {selectedStudent.semester} | Overall Band: <strong>{selectedStudent.value}</strong> | Weighted Score: <strong>{selectedStudent.totalScore}</strong>
+                </p>
+
+                <div className="modal-grid">
+                  {/* Vocabulary Box */}
+                  <div className="modal-box">
+                    <h4>Vocabulary (Total: {selectedStudent.scores.vocab.total})</h4>
+                    <div>
+                      {selectedStudent.scores.vocab.items.map((sub, idx) => (
+                        <div key={idx} className="modal-score-row">
+                          <span className="modal-score-label">{sub.label}</span>
+                          <span className="modal-score-value">{sub.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Pa / Phonics Box */}
+                  <div className="modal-box">
+                    <h4>Pa / Phonics (Total: {selectedStudent.scores.pap.total})</h4>
+                    <div>
+                      {selectedStudent.scores.pap.items.map((sub, idx) => (
+                        <div key={idx} className="modal-score-row">
+                          <span className="modal-score-label">{sub.label}</span>
+                          <span className="modal-score-value">{sub.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Writing Box */}
+                  <div className="modal-box">
+                    <h4>Writing (Total: {selectedStudent.scores.writing.total})</h4>
+                    <div>
+                      {selectedStudent.scores.writing.items.map((sub, idx) => (
+                        <div key={idx} className="modal-score-row">
+                          <span className="modal-score-label">{sub.label}</span>
+                          <span className="modal-score-value">{sub.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Listening / Reading Box */}
+                  <div className="modal-box">
+                    <h4>Listening / Reading (Total: {selectedStudent.scores.lrc.total})</h4>
+                    <div>
+                      {selectedStudent.scores.lrc.items.map((sub, idx) => (
+                        <div key={idx} className="modal-score-row">
+                          <span className="modal-score-label">{sub.label}</span>
+                          <span className="modal-score-value">{sub.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  className="modal-close-btn"
+                  onClick={() => setSelectedStudent(null)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
 
         <div className="content-row">
           <div className="chart-wrapper">{createLineChart()}</div>
