@@ -36,7 +36,7 @@ for _, row in df.iterrows():
         print(f"Skipping invalid ID: {raw_id}")
         continue
     
-    # 2. Upsert Student: This handles both inserting new and updating existing
+    # 2.Update/insert Student: This handles both inserting new and updating existing
     name = get_clean_val(row.get('Name'), "Unknown")
     age = get_clean_val(row.get('Age'), 0)
     current_band = get_clean_val(row.get('SummaryBand'), "N/A")
@@ -109,36 +109,52 @@ for _, row in df.iterrows():
     # Always insert the assessment record
     scores_dict = {
         "vocab": {
-            "picture_naming": str(get_clean_val(row.get("Picture_Naming"), "N/A")),
-            "picture_description": str(get_clean_val(row.get("Picture_Description"), "N/A")),
+            "picture_naming": float(row.get("Picture_Naming")) if pd.notnull(row.get("Picture_Naming")) else 0.0,
+            "picture_description": float(row.get("Picture_Description")) if pd.notnull(row.get("Picture_Description")) else 0.0,
+            # "picture_naming": str(get_clean_val(row.get("Picture_Naming"), "N/A")),
+            # "picture_description": str(get_clean_val(row.get("Picture_Description"), "N/A")),
         },
         "pa/phonics": {
-            "pa_identification": str(get_clean_val(row.get("PA_Identification"), "N/A")),
-            "phonics": str(get_clean_val(row.get("Phonics"), "N/A")),
-            "fluency": str(get_clean_val(row.get("FluencyMark"), "N/A")),
-            "word_spelling": str(get_clean_val(row.get("Word_Spelling"), "N/A"))
+            "pa_identification": float(row.get("PA_Identification")) if pd.notnull(row.get("PA_Identification")) else 0.0,
+            "phonics": float(row.get("Phonics")) if pd.notnull(row.get("Phonics")) else 0.0,
+            "fluency": float(row.get("FluencyMark")) if pd.notnull(row.get("FluencyMark")) else 0.0,
+            "word_spelling": float(row.get("Word_Spelling")) if pd.notnull(row.get("Word_Spelling")) else 0.0,
+            # "pa_identification": str(get_clean_val(row.get("PA_Identification"), "N/A")),
+            # "phonics": str(get_clean_val(row.get("Phonics"), "N/A")),
+            # "fluency": str(get_clean_val(row.get("FluencyMark"), "N/A")),
+            # "word_spelling": str(get_clean_val(row.get("Word_Spelling"), "N/A")),
         },
         "writing": {
-            "Letter_Formation": str(get_clean_val(row.get("Letter_Formation"), "N/A")),
-            "edit_d1": str(get_clean_val(row.get("Edit_D1"), "N/A")),
-            "edit_d2": str(get_clean_val(row.get("Edit_D2"), "N/A")),
-            "edit_d3": str(get_clean_val(row.get("Edit_D3"), "N/A")),
-            "narrative_writing": str(get_clean_val(row.get("Narrative_Writing"), "N/A")),
-            "exposition_writing": str(get_clean_val(row.get("Exposition_Writing"), "N/A")),
+            "letter_formation": float(row.get("Letter_Formation")) if pd.notnull(row.get("Letter_Formation")) else 0.0,
+            "edit_d1": float(row.get("Edit_D1")) if pd.notnull(row.get("Edit_D1")) else 0.0,
+            "edit_d2": float(row.get("Edit_D2")) if pd.notnull(row.get("Edit_D2")) else 0.0,
+            "edit_d3": float(row.get("Edit_D3")) if pd.notnull(row.get("Edit_D3")) else 0.0,
+            "narrative_writing": float(row.get("Narrative_Writing")) if pd.notnull(row.get("Narrative_Writing")) else 0.0,
+            "exposition_writing": float(row.get("Exposition_Writing")) if pd.notnull(row.get("Exposition_Writing")) else 0.0,
+            # "Letter_Formation": str(get_clean_val(row.get("Letter_Formation"), "N/A")),
+            # "edit_d1": str(get_clean_val(row.get("Edit_D1"), "N/A")),
+            # "edit_d2": str(get_clean_val(row.get("Edit_D2"), "N/A")),
+            # "edit_d3": str(get_clean_val(row.get("Edit_D3"), "N/A")),
+            # "narrative_writing": str(get_clean_val(row.get("Narrative_Writing"), "N/A")),
+            # "exposition_writing": str(get_clean_val(row.get("Exposition_Writing"), "N/A")),
         },
         "listening/readingcomprehension": {
-            "persuasive_writing": str(get_clean_val(row.get("Persuasive_Writing"), "N/A")),
-            "listening_comprehension": str(get_clean_val(row.get("LS_Comprehension"), "N/A")),
-            "reading_comprehension": str(get_clean_val(row.get("RD_Comprehension"), "N/A"))
+            "persuasive_writing": float(row.get("Persuasive_Writing")) if pd.notnull(row.get("Persuasive_Writing")) else 0.0,
+            "listening_comprehension": float(row.get("LS_Comprehension")) if pd.notnull(row.get("LS_Comprehension")) else 0.0,
+            "reading_comprehension": float(row.get("RD_Comprehension")) if pd.notnull(row.get("RD_Comprehension")) else 0.0,
+            # "persuasive_writing": str(get_clean_val(row.get("Persuasive_Writing"), "N/A")),
+            # "listening_comprehension": str(get_clean_val(row.get("LS_Comprehension"), "N/A")),
+            # "reading_comprehension": str(get_clean_val(row.get("RD_Comprehension"), "N/A")),
         }
     }
     scores_json = json.dumps(scores_dict)
     sem = get_clean_val(row.get('Semester'), "Unknown")
+    therapistid = int(str(teacher_id).lower().replace('teacher', '').strip())
     
     cursor.execute("""
-        INSERT INTO assessments (studentid, semester, centre, scores, band) 
-        VALUES (%s, %s, %s, %s, %s)
-    """, (student_id, sem, centre, scores_json, current_band))
+        INSERT INTO assessments (studentid, therapistid, semester, centre, scores, band) 
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (student_id, therapistid, sem, centre, scores_json, current_band))
 
 conn.commit()
 cursor.close()

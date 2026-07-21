@@ -21,16 +21,67 @@ export const loadData = async (role, username, setMetrics, setIsLoading) => {
         return field;
       };
 
+      const bandValue = (student.value || student.band || 'N/A').toUpperCase();
+
+      // Default to fall back upon
+      let weights = { vocab: 0.25, pap: 0.35, writing: 0.20, lrc: 0.20 }; // Default fallback
+    
+      if (bandValue.startsWith('A')) {
+        // Example weights for Band A (e.g., heavier emphasis on writing and advanced comprehension)
+        weights = { vocab: 0.5, pap: 0.35, writing: 0.075, lrc: 0.075 };
+      } else if (bandValue.startsWith('B')) {
+        // Example weights for Band B (e.g., balanced core skills focus)
+        weights = { vocab: 0.15, pap: 0.50, writing: 0.175, lrc: 0.175 };
+      } else if (bandValue.startsWith('C')) {
+        // Example weights for Band C (e.g., heavier emphasis on foundational vocab and phonics)
+        weights = { vocab: 0.15, pap: 0.35, writing: 0.25, lrc: 0.25 };
+      }
+
+
+      // Helper to calculate total sum and format details string
+      const processCategory = (categoryObj) => {
+        if (!categoryObj || typeof categoryObj !== 'object') {
+          return { total: 0, details: 'N/A' };
+        }
+        
+        const entries = Object.entries(categoryObj);
+        const total = entries.reduce((acc, [, val]) => acc + (parseFloat(val) || 0), 0);
+        
+        const details = entries
+          .map(([key, val]) => `${key.replace(/_/g, ' ')}: ${val ?? 'N/A'}`)
+          .join(' | ');
+
+        return { total, details };
+      };
+
+      const vocabData = processCategory(parsedScores.vocab);
+      const papData = processCategory(parsedScores['pa/phonics']);
+      const writingData = processCategory(parsedScores.writing);
+      const lrcData = processCategory(parsedScores['listening/readingcomprehension']);
+
+      // Calculate final weighted score
+      const finalWeightedScore = (
+        (vocabData.total * weights.vocab) +
+        (papData.total * weights.pap) +
+        (writingData.total * weights.writing) +
+        (lrcData.total * weights.lrc)
+      ).toFixed(2);
+
       return {
         id: student.studentid,
-        name: student.name,
-        value: student.value || student.band || 'N/A',
+        name: student.name || `Student ${student.studentid}`,
+        value: bandValue,
         semester: student.semester || 'N/A',
+        totalScore: finalWeightedScore,
         scores: {
-          vocab: formatScoreField(parsedScores.vocab),
-          pap: formatScoreField(parsedScores['pa/phonics']),
-          writing: formatScoreField(parsedScores.writing),
-          lrc: formatScoreField(parsedScores['listening/readingcomprehension']),
+          vocab: vocabData,
+          pap: papData,
+          writing: writingData,
+          lrc: lrcData,
+          // vocab: formatScoreField(parsedScores.vocab),
+          // pap: formatScoreField(parsedScores['pa/phonics']),
+          // writing: formatScoreField(parsedScores.writing),
+          // lrc: formatScoreField(parsedScores['listening/readingcomprehension']),
         },
       };
     });

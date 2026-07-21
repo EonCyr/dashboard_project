@@ -119,7 +119,7 @@ app.get('/students', (req, res) => {
                         s.name, 
                         assess.scores, 
                         assess.band AS value,
-                        assess.semester, -- <--- Added semester
+                        assess.semester,
                         ROW_NUMBER() OVER (PARTITION BY s.studentid ORDER BY assess.semester DESC) AS row_num
                     FROM students s
                     INNER JOIN parent_student ps ON ps.studentid = s.studentid
@@ -141,6 +141,7 @@ app.get('/students', (req, res) => {
                         s.name,
                         assess.scores, 
                         assess.band AS value,
+                        assess.semester,
                         ROW_NUMBER() OVER (PARTITION BY s.studentid ORDER BY assess.semester DESC) AS row_num
                     FROM students s
                     INNER JOIN therapist_student ts ON ts.studentid = s.studentid

@@ -148,10 +148,35 @@ if (!isLoggedIn) {
                               {item.value}
                             </span>
                           </td>
-                          <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.vocab || '-'}</td>
+                            {/* Vocab Column */}
+                            <td style={{ padding: '12px', fontSize: '0.8rem' }}>
+                              <div style={{ fontWeight: 'bold', color: '#111' }}>Score: {item.scores.vocab.total}</div>
+                              {/* <div style={{ color: '#666', fontSize: '0.75rem' }}>{item.scores.vocab.details}</div> */}
+                            </td>
+
+                            {/* Phonics Column */}
+                            <td style={{ padding: '12px', fontSize: '0.8rem' }}>
+                              <div style={{ fontWeight: 'bold', color: '#111' }}>Score: {item.scores.pap.total}</div>
+                              {/* <div style={{ color: '#666', fontSize: '0.75rem' }}>{item.scores.pap.details}</div> */}
+                            </td>
+
+                            {/* Writing Column */}
+                            <td style={{ padding: '12px', fontSize: '0.8rem' }}>
+                              <div style={{ fontWeight: 'bold', color: '#111' }}>Score: {item.scores.writing.total}</div>
+                              {/* <div style={{ color: '#666', fontSize: '0.75rem' }}>{item.scores.writing.details}</div> */}
+                            </td>
+
+                            {/* Listening/Reading Column */}
+                            <td style={{ padding: '12px', fontSize: '0.8rem' }}>
+                              <div style={{ fontWeight: 'bold', color: '#111' }}>Score: {item.scores.lrc.total}</div>
+                              {/* <div style={{ color: '#666', fontSize: '0.75rem' }}>{item.scores.lrc.details}</div> */}
+                            </td>
+
+
+                          {/* <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.vocab || '-'}</td>
                           <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.pap || '-'}</td>
                           <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.writing || '-'}</td>
-                          <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.lrc || '-'}</td>
+                          <td style={{ padding: '12px', fontSize: '0.85rem' }}>{item.scores.lrc || '-'}</td> */}
                         </tr>
                       ))}
                     </tbody>
