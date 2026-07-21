@@ -65,6 +65,25 @@ for _, row in df.iterrows():
         VALUES (%s, %s, %s, %s)
     """, (student_id, '2000-10-10', sch_level, months_to_48))
 
+    # Create default user entry for the parent
+    pwd = 'pw123' # Default password for new parent users
+    
+    cursor.execute("""
+        INSERT IGNORE INTO users (userid, username, password, email, phone_number, role) 
+        VALUES (%s, %s, %s, %s, %s, 'parent')
+    """, (
+        student_id + 10000, 
+        f"parent_{student_id}", 
+        pwd, 
+        f"parent_{student_id}@example.com", 
+        "0000000000"
+    ))
+    
+    # Create corresponding parent profile entry
+    cursor.execute("""
+        INSERT IGNORE INTO parents (userid) 
+        VALUES (%s)
+    """, (student_id + 10000,))
 
     # 3. Handle Therapist Creation (Ensuring no duplicates)
     teacher_id = row.get('Teacher_ID')
@@ -104,6 +123,11 @@ for _, row in df.iterrows():
                 INSERT IGNORE INTO therapist_student (studentid, therapistid) 
                 VALUES (%s, %s)
             """, (student_id, therapist_userid))
+            
+            cursor.execute("""
+                INSERT IGNORE INTO parent_student (parentid, studentid, relationship)
+                VALUES (%s, %s, %s)
+            """, (student_id + 10000, student_id, 'Parent'))
 
 
     # Always insert the assessment record
