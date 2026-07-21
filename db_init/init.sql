@@ -59,7 +59,7 @@ INSERT INTO student_scores (student_id, vocab_band, phonics_band, writing_band, 
 ('002', 'B+', 'C', 'B', 'C+', 'C'),
 ('003', 'B-', 'B', 'C', 'B-', 'B-');
 
---For Communications
+-- For Communications
 CREATE TABLE IF NOT EXISTS communications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id VARCHAR(50) NOT NULL,
