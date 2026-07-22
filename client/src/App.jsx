@@ -10,9 +10,9 @@ const initialMetrics = [
   { title: 'Metric 4', value: '98.2%', detail: 'amazing' },
 ]
 
-const [activeThread, setActiveThread] = useState(null); // { studentId, studentName } or null
-
 function App() {
+
+  const [activeThread, setActiveThread] = useState(null); // { studentId, studentName } or null
   // Authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [role, setRole] = useState(''); // 'parent' or 'tutor'
