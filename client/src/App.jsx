@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import { createLineChart } from './linechart.jsx'
-import CommunicationThread from './Communications.jsx';
+import CommunicationThread from './Communications.jsx'
 
 const initialMetrics = [
   { title: 'Metric 1', value: 'A', detail: 'On track' },
