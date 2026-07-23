@@ -362,11 +362,31 @@ h1 {
 .modal-card {
   background: #fff;
   padding: 2rem;
-  borderRadius: 8px;
-  width: 600px;
-  max-width: 90%;
+  border-radius: 8px;
+  width: 950px !important; /* Expanded width to fit side-by-side columns */
+  max-width: 95% !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-split-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Splits modal into two equal columns */
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.modal-left-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-right-column {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
 }
 
 .modal-subtitle {

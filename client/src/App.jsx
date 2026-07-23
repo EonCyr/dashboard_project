@@ -5,6 +5,7 @@ import { loadData } from './loadData.jsx'
 import ReportDownload from './ReportDownload.jsx'
 import { ClinicalStudentSelector } from './ClinicalReportDownload.jsx'
 import { RelationshipManagerModal } from './RelationshipManager.jsx'
+import { StudentLineChart } from './linechart.jsx'
 
 function App() {
   // Authentication state
@@ -25,6 +26,7 @@ function App() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
+  const [studentHistory, setStudentHistory] = useState([]);
 
   // Calculate sliced metrics for the current page
   const indexOfLastRow = currentPage * rowsPerPage;
@@ -58,6 +60,43 @@ function App() {
     // Use setErrorMessage instead of alert
     setErrorMessage('Could not connect to server. Please check your network.');
   }
+  }
+
+  // 2. HandleRowClick
+  const handleRowClick = async (student) => {
+    setSelectedStudent(student);
+    try {
+      const response = await fetch(`/api/student-history/${student.id}`);
+      const rawHistory = await response.json();
+      
+      const formattedHistory = rawHistory.map((row) => {
+        const parsed = typeof row.scores === 'string' ? JSON.parse(row.scores) : row.scores || {};
+        const band = (row.band || student.value || 'B').toUpperCase();
+        
+        let weights = { vocab: 0.25, pap: 0.35, writing: 0.20, lrc: 0.20 };
+        if (band.startsWith('A')) weights = { vocab: 0.5, pap: 0.35, writing: 0.075, lrc: 0.075 };
+        else if (band.startsWith('B')) weights = { vocab: 0.15, pap: 0.50, writing: 0.175, lrc: 0.175 };
+        else if (band.startsWith('C')) weights = { vocab: 0.15, pap: 0.35, writing: 0.25, lrc: 0.25 };
+
+        const calc = (obj) => Object.values(obj || {}).reduce((acc, v) => acc + (parseFloat(v) || 0), 0);
+        
+        const total = (
+          (calc(parsed.vocab) * weights.vocab) +
+          (calc(parsed['pa/phonics']) * weights.pap) +
+          (calc(parsed.writing) * weights.writing) +
+          (calc(parsed['listening/readingcomprehension']) * weights.lrc)
+        ).toFixed(2);
+
+        return {
+          semester: row.semester, 
+          score: parseFloat(total)
+        };
+      });
+
+      setStudentHistory(formattedHistory);
+    } catch (err) {
+      console.error('Failed to load history graph data', err);
+    }
 };
 
   useEffect(() => {
@@ -154,7 +193,7 @@ if (!isLoggedIn) {
                     </thead>
                     <tbody>
                       {currentMetrics.map((item) => (
-                        <tr key={item.id} className='student-row' onClick={() => setSelectedStudent(item)}>
+                        <tr key={item.id} className='student-row' onClick={() => handleRowClick(item)}>
                           <td className="student-id-cell">
                               {item.id} <br />
                               <span className="student-semester">({item.semester})</span>
@@ -240,64 +279,70 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
                   Semester: {selectedStudent.semester} | Overall Band: <strong>{selectedStudent.value}</strong> | Weighted Score: <strong>{selectedStudent.totalScore}</strong>
                 </p>
 
-                <div className="modal-grid">
-                  {/* Vocabulary Box */}
-                  <div className="modal-box">
-                    <h4>Vocabulary (Total: {selectedStudent.scores.vocab.total})</h4>
-                    <div>
-                      {selectedStudent.scores.vocab.items.map((sub, idx) => (
-                        <div key={idx} className="modal-score-row">
-                          <span className="modal-score-label">{sub.label}</span>
-                          <span className="modal-score-value">{sub.value}</span>
-                        </div>
-                      ))}
+                {/* TWO-COLUMN SPLIT CONTAINER */}
+                <div className="modal-split-container">
+                  
+                  {/* LEFT COLUMN: Line Chart & Extra Analytics Space */}
+                  <div className="modal-left-column">
+                    <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '6px', height: '100%' }}>
+                      <h4 style={{ margin: '0 0 10px 0', color: '#1e3a8a' }}>Historical Performance Trend</h4>
+                      <StudentLineChart historyData={studentHistory} />
                     </div>
                   </div>
 
-                  {/* Pa / Phonics Box */}
-                  <div className="modal-box">
-                    <h4>Pa / Phonics (Total: {selectedStudent.scores.pap.total})</h4>
-                    <div>
-                      {selectedStudent.scores.pap.items.map((sub, idx) => (
-                        <div key={idx} className="modal-score-row">
-                          <span className="modal-score-label">{sub.label}</span>
-                          <span className="modal-score-value">{sub.value}</span>
-                        </div>
-                      ))}
+                  {/* RIGHT COLUMN: Category Breakdown Cards */}
+                  <div className="modal-right-column">
+                    <div className="modal-box">
+                      <h4>Vocabulary (Total: {selectedStudent.scores.vocab.total})</h4>
+                      <div>
+                        {selectedStudent.scores.vocab.items.map((sub, idx) => (
+                          <div key={idx} className="modal-score-row">
+                            <span className="modal-score-label">{sub.label}</span>
+                            <span className="modal-score-value">{sub.value}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Writing Box */}
-                  <div className="modal-box">
-                    <h4>Writing (Total: {selectedStudent.scores.writing.total})</h4>
-                    <div>
-                      {selectedStudent.scores.writing.items.map((sub, idx) => (
-                        <div key={idx} className="modal-score-row">
-                          <span className="modal-score-label">{sub.label}</span>
-                          <span className="modal-score-value">{sub.value}</span>
-                        </div>
-                      ))}
+                    <div className="modal-box">
+                      <h4>Pa / Phonics (Total: {selectedStudent.scores.pap.total})</h4>
+                      <div>
+                        {selectedStudent.scores.pap.items.map((sub, idx) => (
+                          <div key={idx} className="modal-score-row">
+                            <span className="modal-score-label">{sub.label}</span>
+                            <span className="modal-score-value">{sub.value}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Listening / Reading Box */}
-                  <div className="modal-box">
-                    <h4>Listening / Reading (Total: {selectedStudent.scores.lrc.total})</h4>
-                    <div>
-                      {selectedStudent.scores.lrc.items.map((sub, idx) => (
-                        <div key={idx} className="modal-score-row">
-                          <span className="modal-score-label">{sub.label}</span>
-                          <span className="modal-score-value">{sub.value}</span>
-                        </div>
-                      ))}
+                    <div className="modal-box">
+                      <h4>Writing (Total: {selectedStudent.scores.writing.total})</h4>
+                      <div>
+                        {selectedStudent.scores.writing.items.map((sub, idx) => (
+                          <div key={idx} className="modal-score-row">
+                            <span className="modal-score-label">{sub.label}</span>
+                            <span className="modal-score-value">{sub.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="modal-box">
+                      <h4>Listening / Reading (Total: {selectedStudent.scores.lrc.total})</h4>
+                      <div>
+                        {selectedStudent.scores.lrc.items.map((sub, idx) => (
+                          <div key={idx} className="modal-score-row">
+                            <span className="modal-score-label">{sub.label}</span>
+                            <span className="modal-score-value">{sub.value}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <button 
-                  className="modal-close-btn"
-                  onClick={() => setSelectedStudent(null)}
-                >
+                <button className="modal-close-btn" onClick={() => setSelectedStudent(null)}>
                   Close
                 </button>
               </div>

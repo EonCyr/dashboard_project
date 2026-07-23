@@ -37,54 +37,6 @@ const connectWithRetry = () => {
 
 connectWithRetry();
 
-// app.get('/students', (req, res) => {
-//     const { role, username } = req.query;
-
-//     const userLookupSql = 'SELECT userid FROM users WHERE username = ?';
-
-//     pool.query(userLookupSql, [username], (userErr, userRows) => {
-//         if (userErr) {
-//             console.error('Error finding user:', userErr);
-//             return res.status(500).json({ error: 'Failed to fetch' });
-//         }
-
-//         if (!userRows.length) {
-//             return res.status(404).json({ error: 'User not found' });
-//         }
-
-//         const userId = userRows[0].userid;
-//         let sql = `
-//             SELECT s.studentid, assess.scores, assess.band AS value
-//             FROM students s
-//             LEFT JOIN assessments assess ON s.studentid = assess.studentid
-//             `;
-//         let params = [];
-
-//         if (role === 'parent') {
-//             sql += `
-//                 INNER JOIN parent_student ps ON ps.studentid = s.studentid
-//                 WHERE ps.parentid = ?
-//             `;
-//             params = [userId];
-//         } else if (role === 'therapist') {
-//             sql += `
-//                 INNER JOIN therapist_student ts ON ts.studentid = s.studentid
-//                 WHERE ts.therapistid = ?
-//             `;
-//             params = [userId];
-//         }
-
-
-//         pool.query(sql, params, (err, rows) => {
-//             if (err) {
-//                 console.error('Error fetching students:', err);
-//                 return res.status(500).json({ error: 'Failed to fetch' });
-//             }
-//             res.json(rows);
-//         });
-//     });
-// });
-
 app.get('/students', (req, res) => {
     const { role, username } = req.query;
 
@@ -105,13 +57,6 @@ app.get('/students', (req, res) => {
         let params = [];
 
         if (role === 'parent') {
-            // sql = `
-            //     SELECT s.studentid, assess.scores, assess.band , assess.semester AS value
-            //     FROM students s
-            //     LEFT JOIN assessments assess ON s.studentid = assess.studentid
-            //     INNER JOIN parent_student ps ON ps.studentid = s.studentid
-            //     WHERE ps.parentid = ?
-            // `;
             sql = `
                 WITH ranked_assessments AS (
                     SELECT 
@@ -309,6 +254,26 @@ app.post('/login', (req, res) => {
     }
   });
 });
+
+app.get('/student-history/:studentid', (req, res) => {
+    const { studentid } = req.params;
+    const sql = `
+        SELECT semester, scores, band 
+        FROM assessments 
+        WHERE studentid = ? 
+        ORDER BY semester ASC;
+    `;
+    pool.query(sql, [studentid], (err, rows) => {
+        if (err) {
+            console.error('Error fetching history:', err);
+            return res.status(500).json({ error: 'Failed to fetch history' });
+        }
+        res.json(rows);
+    });
+});
+
+
+
 // Report generation feature (added) 
 
 const reportCache = new Map();

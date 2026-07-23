@@ -37,23 +37,6 @@ export const loadData = async (role, username, setMetrics, setIsLoading) => {
         weights = { vocab: 0.15, pap: 0.35, writing: 0.25, lrc: 0.25 };
       }
 
-
-      // Helper to calculate total sum and format details string
-      // const processCategory = (categoryObj) => {
-      //   if (!categoryObj || typeof categoryObj !== 'object') {
-      //     return { total: 0, details: 'N/A' };
-      //   }
-        
-      //   const entries = Object.entries(categoryObj);
-      //   const total = entries.reduce((acc, [, val]) => acc + (parseFloat(val) || 0), 0);
-        
-      //   const details = entries
-      //     .map(([key, val]) => `${key.replace(/_/g, ' ')}: ${val ?? 'N/A'}`)
-      //     .join(' | ');
-
-      //   return { total, details };
-      // };
-
       // Helper to calculate total sum and keep raw entries array
       const processCategory = (categoryObj) => {
         if (!categoryObj || typeof categoryObj !== 'object') {
