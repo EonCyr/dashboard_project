@@ -21,6 +21,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isRelationshipManagerOpen, setIsRelationshipManagerOpen] = useState(false);
+  const [sortBy, setSortBy] = useState('none');
+  const [sortOrder, setSortOrder] = useState('asc');
   
   // States for the student pop up
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -183,8 +185,32 @@ if (!isLoggedIn) {
       <section className="panel">
         <h2>Student Metrics</h2>
         {data && <p>API Response: {data}</p>}
+      
+          {role === "therapist" ? (
+            <>
+              <label>Sort by:
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                  <option value="none">None</option>
+                  <option value="id">Student ID</option>
+                  <option value="band">Overall Band</option>
+                  <option value="vocab">Vocab</option>
+                  <option value="pap">Pa / Phonics</option>
+                  <option value="writing">Writing</option>
+                  <option value="lrc">Listening / Reading</option>
+                  <option value="semester">Semester</option>
+                </select>
+              </label>
 
-        <button className="load-button" onClick={() => loadData(role, username, setMetrics, setIsLoading)} disabled={isLoading}>
+              <label>Sort Order:
+                <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+                  <option value="asc">Ascending</option>
+                  <option value="desc">Descending</option>
+                </select>
+              </label>
+            </>
+          ) : null}
+        
+        <button className="load-button" onClick={() => loadData(role, username, setMetrics, setIsLoading, sortBy, sortOrder)} disabled={isLoading}>
           {isLoading ? 'Loading...' : 'Load Data'}
         </button>
 

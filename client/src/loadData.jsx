@@ -1,5 +1,8 @@
 
-export const loadData = async (role, username, setMetrics, setIsLoading) => {
+export const loadData = async (role, username, setMetrics, setIsLoading, 
+  sortBy = 'none',     // 'none' | 'totalScore' | 'band'
+  sortOrder = 'asc'    // 'asc' | 'desc'
+  ) => {
   setIsLoading(true);
   try {
     const response = await fetch(`/api/students?role=${role}&username=${username}`);
@@ -86,10 +89,48 @@ export const loadData = async (role, username, setMetrics, setIsLoading) => {
         },
       };
     });
-    setMetrics(studentMetrics);
+    //setMetrics(studentMetrics);
+    const sortedMetrics = sortStudentMetrics(studentMetrics, sortBy, sortOrder);
+    setMetrics(sortedMetrics);
   } catch (error) {
     console.error('Error:', error);
   } finally {
     setIsLoading(false);
   }
+};
+
+// Sorts a list of student metric objects by 'totalScore' or 'band'.
+// Passing sortBy = 'none' returns the array in its original (fetched) order.
+export const sortStudentMetrics = (metrics, sortBy = 'none', sortOrder = 'asc') => {
+  if (sortBy === 'none') {
+    return metrics;
+  }
+ 
+  // Copy so we never mutate the array/objects the caller passed in
+  const sorted = [...metrics];
+  const direction = sortOrder === 'desc' ? -1 : 1;
+ 
+  sorted.sort((a, b) => {
+    let comparison = 0;
+    
+    if (sortBy === 'id') {
+      comparison = a.id - b.id;
+    } else if (sortBy === 'band') {
+      comparison = a.value.localeCompare(b.value);
+    } else if (sortBy === 'vocab') {
+      comparison = a.scores.vocab.total - b.scores.vocab.total;
+    } else if (sortBy === 'pap') {
+      comparison = a.scores.pap.total - b.scores.pap.total;
+    } else if (sortBy === 'writing') {
+      comparison = a.scores.writing.total - b.scores.writing.total;
+    } else if (sortBy === 'lrc') {
+      comparison = a.scores.lrc.total - b.scores.lrc.total;
+    } else if (sortBy === 'semester') {
+      comparison = a.semester.localeCompare(b.semester);
+    }
+
+    return comparison * direction;
+  });
+ 
+  return sorted;
 };
