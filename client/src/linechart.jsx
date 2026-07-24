@@ -24,7 +24,14 @@ export function createLineChart() {
         >
           <CartesianGrid stroke="#aaa" strokeDasharray="5 5" />
           <Line dataKey="uv" stroke="#E91626" strokeWidth={2} name="My scores" />
-          <XAxis dataKey="name" />
+          <XAxis 
+            dataKey="semester" 
+            interval={0} // <--- Forces Recharts to show every single item
+            angle={-25}  // <--- Optional: tilts labels slightly so they don't overlap
+            textAnchor="end"
+            height={50}  // <--- Adds bottom margin space for the tilted labels
+            tick={{ fontSize: 11 }}
+          />
           <YAxis width="auto" label={{ value: 'Score', position: 'insideLeft', angle: -90 }} />
           <Legend align="center" />
           <Tooltip />

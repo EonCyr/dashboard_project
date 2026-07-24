@@ -27,6 +27,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
   const [studentHistory, setStudentHistory] = useState([]);
+  const [activeSemesterData, setActiveSemesterData] = useState(null);
 
   // Calculate sliced metrics for the current page
   const indexOfLastRow = currentPage * rowsPerPage;
@@ -62,7 +63,8 @@ function App() {
   }
   }
 
-  // 2. HandleRowClick
+// 2. HandleRowClick
+
   const handleRowClick = async (student) => {
     setSelectedStudent(student);
     try {
@@ -87,17 +89,33 @@ function App() {
           (calc(parsed['listening/readingcomprehension']) * weights.lrc)
         ).toFixed(2);
 
+        // Helper to format items for the modal rows
+        const formatItems = (obj) => Object.entries(obj || {}).map(([key, val]) => ({
+          label: key.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()),
+          value: val ?? 'N/A'
+        }));
         return {
           semester: row.semester, 
-          score: parseFloat(total)
+          band: band,
+          totalScore: total,
+          score: parseFloat(total), // <--- Add this property for the chart to plot correctly
+          scores: {
+            vocab: { total: calc(parsed.vocab), items: formatItems(parsed.vocab) },
+            pap: { total: calc(parsed['pa/phonics']), items: formatItems(parsed['pa/phonics']) },
+            writing: { total: calc(parsed.writing), items: formatItems(parsed.writing) },
+            lrc: { total: calc(parsed['listening/readingcomprehension']), items: formatItems(parsed['listening/readingcomprehension']) },
+          }
         };
       });
 
       setStudentHistory(formattedHistory);
+      // Default to the matching table row semester or the latest one
+      const currentMatch = formattedHistory.find(h => h.semester === student.semester) || formattedHistory[formattedHistory.length - 1];
+      setActiveSemesterData(currentMatch);
     } catch (err) {
       console.error('Failed to load history graph data', err);
     }
-};
+  };
 
   useEffect(() => {
     if (isLoggedIn) { // Only fetch when logged in
@@ -271,18 +289,29 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
             </div>
         )}
         {/* IN-DEPTH STUDENT MODAL OVERLAY */}
-          {selectedStudent && (
+          {selectedStudent && activeSemesterData && (
             <div className="modal-overlay">
               <div className="modal-card">
                 <h2>Student ID: {selectedStudent.id} In-Depth Report</h2>
                 <p className="modal-subtitle">
-                  Semester: {selectedStudent.semester} | Overall Band: <strong>{selectedStudent.value}</strong> | Weighted Score: <strong>{selectedStudent.totalScore}</strong>
+                  Overall Band: <strong>{activeSemesterData.band}</strong> | Weighted Score: <strong>{activeSemesterData.totalScore}</strong>
                 </p>
 
-                {/* TWO-COLUMN SPLIT CONTAINER */}
+                {/* CLICKABLE SEMESTER TABS */}
+                <div className="semester-tabs-container">
+                  {studentHistory.map((hist, idx) => (
+                    <button
+                      key={idx}
+                      className={`semester-tab-btn ${activeSemesterData.semester === hist.semester ? 'active' : ''}`}
+                      onClick={() => setActiveSemesterData(hist)}
+                    >
+                      {hist.semester}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="modal-split-container">
-                  
-                  {/* LEFT COLUMN: Line Chart & Extra Analytics Space */}
+                  {/* LEFT COLUMN: Line Chart */}
                   <div className="modal-left-column">
                     <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '6px', height: '100%' }}>
                       <h4 style={{ margin: '0 0 10px 0', color: '#1e3a8a' }}>Historical Performance Trend</h4>
@@ -290,12 +319,12 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
                     </div>
                   </div>
 
-                  {/* RIGHT COLUMN: Category Breakdown Cards */}
+                  {/* RIGHT COLUMN: Active Semester Category Cards */}
                   <div className="modal-right-column">
                     <div className="modal-box">
-                      <h4>Vocabulary (Total: {selectedStudent.scores.vocab.total})</h4>
+                      <h4>Vocabulary (Total: {activeSemesterData.scores.vocab.total})</h4>
                       <div>
-                        {selectedStudent.scores.vocab.items.map((sub, idx) => (
+                        {activeSemesterData.scores.vocab.items.map((sub, idx) => (
                           <div key={idx} className="modal-score-row">
                             <span className="modal-score-label">{sub.label}</span>
                             <span className="modal-score-value">{sub.value}</span>
@@ -305,9 +334,9 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
                     </div>
 
                     <div className="modal-box">
-                      <h4>Pa / Phonics (Total: {selectedStudent.scores.pap.total})</h4>
+                      <h4>Pa / Phonics (Total: {activeSemesterData.scores.pap.total})</h4>
                       <div>
-                        {selectedStudent.scores.pap.items.map((sub, idx) => (
+                        {activeSemesterData.scores.pap.items.map((sub, idx) => (
                           <div key={idx} className="modal-score-row">
                             <span className="modal-score-label">{sub.label}</span>
                             <span className="modal-score-value">{sub.value}</span>
@@ -317,9 +346,9 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
                     </div>
 
                     <div className="modal-box">
-                      <h4>Writing (Total: {selectedStudent.scores.writing.total})</h4>
+                      <h4>Writing (Total: {activeSemesterData.scores.writing.total})</h4>
                       <div>
-                        {selectedStudent.scores.writing.items.map((sub, idx) => (
+                        {activeSemesterData.scores.writing.items.map((sub, idx) => (
                           <div key={idx} className="modal-score-row">
                             <span className="modal-score-label">{sub.label}</span>
                             <span className="modal-score-value">{sub.value}</span>
@@ -329,9 +358,9 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
                     </div>
 
                     <div className="modal-box">
-                      <h4>Listening / Reading (Total: {selectedStudent.scores.lrc.total})</h4>
+                      <h4>Listening / Reading (Total: {activeSemesterData.scores.lrc.total})</h4>
                       <div>
-                        {selectedStudent.scores.lrc.items.map((sub, idx) => (
+                        {activeSemesterData.scores.lrc.items.map((sub, idx) => (
                           <div key={idx} className="modal-score-row">
                             <span className="modal-score-label">{sub.label}</span>
                             <span className="modal-score-value">{sub.value}</span>
@@ -342,12 +371,19 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
                   </div>
                 </div>
 
-                <button className="modal-close-btn" onClick={() => setSelectedStudent(null)}>
+                <button 
+                  className="modal-close-btn"
+                  onClick={() => { setSelectedStudent(null); setActiveSemesterData(null); }}
+                >
                   Close
                 </button>
               </div>
             </div>
           )}
+
+
+
+
 
         <div className="content-row">
           <div className="chart-wrapper">{createLineChart()}</div>
