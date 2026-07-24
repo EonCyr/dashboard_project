@@ -165,6 +165,130 @@ app.get('/students', (req, res) => {
     });
 });
 
+app.route('/relationships')
+    .get((req, res) => {
+        const { username } = req.query;
+
+        const userLookupSql = 'SELECT userid FROM users WHERE username = ?';
+
+        pool.query(userLookupSql, [username], (userErr, userRows) => {
+            if (userErr) {
+                console.error('Error finding user:', userErr);
+                return res.status(500).json({ error: 'Failed to fetch' });
+            }
+
+            if (!userRows.length) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            const therapistId = userRows[0].userid;
+            const sql = `
+                SELECT ts.studentid, s.name AS student_name, ps.parentid, p.username AS parent_name, ps.relationship
+                FROM therapist_student ts
+                INNER JOIN students s ON s.studentid = ts.studentid
+                LEFT JOIN parent_student ps ON ps.studentid = ts.studentid
+                LEFT JOIN users p ON p.userid = ps.parentid
+                WHERE ts.therapistid = ?
+                ORDER BY ts.studentid, ps.parentid
+            `;
+
+            pool.query(sql, [therapistId], (err, rows) => {
+                if (err) {
+                    console.error('Error fetching relationships:', err);
+                    return res.status(500).json({ error: 'Failed to fetch relationships' });
+                }
+                res.json(rows);
+            });
+        });
+    })
+    .post((req, res) => {
+        const { username, studentid, parentid, relationship } = req.body;
+
+        if (!username || !studentid || !parentid) {
+            return res.status(400).json({ error: 'Username, student ID, and parent ID are required' });
+        }
+
+        const userLookupSql = 'SELECT userid FROM users WHERE username = ?';
+
+        pool.query(userLookupSql, [username], (userErr, userRows) => {
+            if (userErr) {
+                console.error('Error finding user:', userErr);
+                return res.status(500).json({ error: 'Failed to fetch' });
+            }
+
+            if (!userRows.length) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            const therapistId = userRows[0].userid;
+            const verifySql = 'SELECT 1 FROM therapist_student WHERE therapistid = ? AND studentid = ?';
+
+            pool.query(verifySql, [therapistId, studentid], (verifyErr) => {
+                if (verifyErr) {
+                    console.error('Error verifying therapist assignment:', verifyErr);
+                    return res.status(500).json({ error: 'Failed to verify access' });
+                }
+
+                const insertSql = `
+                    INSERT INTO parent_student (parentid, studentid, relationship)
+                    VALUES (?, ?, ?)
+                    ON DUPLICATE KEY UPDATE relationship = VALUES(relationship)
+                `;
+
+                pool.query(insertSql, [parentid, studentid, relationship || 'Parent'], (insertErr) => {
+                    if (insertErr) {
+                        console.error('Error creating relationship:', insertErr);
+                        return res.status(500).json({ error: 'Failed to create relationship' });
+                    }
+                    res.json({ message: 'Relationship added successfully' });
+                });
+            });
+        });
+    })
+    .delete((req, res) => {
+        const { username, studentid, parentid } = req.body;
+
+        if (!username || !studentid || !parentid) {
+            return res.status(400).json({ error: 'Username, student ID, and parent ID are required' });
+        }
+
+        const userLookupSql = 'SELECT userid FROM users WHERE username = ?';
+
+        pool.query(userLookupSql, [username], (userErr, userRows) => {
+            if (userErr) {
+                console.error('Error finding user:', userErr);
+                return res.status(500).json({ error: 'Failed to fetch' });
+            }
+
+            if (!userRows.length) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            const therapistId = userRows[0].userid;
+            const verifySql = 'SELECT 1 FROM therapist_student WHERE therapistid = ? AND studentid = ?';
+
+            pool.query(verifySql, [therapistId, studentid], (verifyErr) => {
+                if (verifyErr) {
+                    console.error('Error verifying therapist assignment:', verifyErr);
+                    return res.status(500).json({ error: 'Failed to verify access' });
+                }
+
+                const deleteSql = 'DELETE FROM parent_student WHERE parentid = ? AND studentid = ?';
+
+                pool.query(deleteSql, [parentid, studentid], (deleteErr, result) => {
+                    if (deleteErr) {
+                        console.error('Error deleting relationship:', deleteErr);
+                        return res.status(500).json({ error: 'Failed to delete relationship' });
+                    }
+                    if (result.affectedRows === 0) {
+                        return res.status(404).json({ error: 'Relationship not found' });
+                    }
+                    res.json({ message: 'Relationship removed successfully' });
+                });
+            });
+        });
+    });
+
 app.post('/login', (req, res) => {
   const { username, password, role } = req.body; // Getting all the components needed to query the request
 

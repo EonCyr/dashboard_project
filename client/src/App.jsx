@@ -4,6 +4,7 @@ import { createLineChart } from './linechart.jsx'
 import { loadData } from './loadData.jsx' 
 import ReportDownload from './ReportDownload.jsx'
 import { ClinicalStudentSelector } from './ClinicalReportDownload.jsx'
+import { RelationshipManagerModal } from './RelationshipManager.jsx'
 
 function App() {
   // Authentication state
@@ -18,6 +19,7 @@ function App() {
   const [metrics, setMetrics] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isRelationshipManagerOpen, setIsRelationshipManagerOpen] = useState(false);
   
   // States for the student pop up
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -212,12 +214,12 @@ if (!isLoggedIn) {
                 <div className="card-grid">
                   {metrics.flatMap((student) => {
                     const scoreCards = [
-                      { label: 'Vocab', value: student.scores?.vocab },
-                      { label: 'Phonics', value: student.scores?.pap },
-                      { label: 'Writing', value: student.scores?.writing },
-                      { label: 'Listening', value: student.scores?.lrc },
+                      { label: 'Vocab', value: student?.scores?.vocab?.total ?? 'N/A' },
+                      { label: 'Phonics', value: student?.scores?.pap?.total ?? 'N/A' },
+                      { label: 'Writing', value: student?.scores?.writing?.total ?? 'N/A' },
+                      { label: 'Listening', value: student?.scores?.lrc?.total ?? 'N/A' },
                     ];
-
+const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
                     return scoreCards.map((score) => (
                       <article className="data-card" key={`${student.id}-${score.label}`}>
                         <p className="card-label">{student.id}: {score.label} | {student.semester}</p>
@@ -311,6 +313,7 @@ if (!isLoggedIn) {
               <ul>
                 <li><button>Add New Assessment</button></li>
                 <li><button>Message All Parents</button></li>
+                <li><button onClick={() => setIsRelationshipManagerOpen(true)}>Manage Parent-Student Relationship</button></li>
               </ul>
               {metrics.length > 0 && metrics[0].id && (
                 <ClinicalStudentSelector metrics={metrics} username={username} />
@@ -329,8 +332,17 @@ if (!isLoggedIn) {
         </div>
       </section>
 
+      <RelationshipManagerModal
+        isOpen={isRelationshipManagerOpen}
+        onClose={() => setIsRelationshipManagerOpen(false)}
+        username={username}
+        isLoading={isLoading}
+        setIsLoading={setIsLoading}
+      />
+
     </div>
-  )
+  );
+
 }
 
 export default App
