@@ -6,8 +6,18 @@ import ReportDownload from './ReportDownload.jsx'
 import { ClinicalStudentSelector } from './ClinicalReportDownload.jsx'
 import { RelationshipManagerModal } from './RelationshipManager.jsx'
 import { StudentLineChart } from './linechart.jsx'
+import CommunicationThread from './Communications.jsx'
+
+const initialMetrics = [
+  { title: 'Metric 1', value: 'A', detail: 'On track' },
+  { title: 'Metric 2', value: '2', detail: 'get good' },
+  { title: 'Metric 3', value: 'C', detail: 'Needs attention' },
+  { title: 'Metric 4', value: '98.2%', detail: 'amazing' },
+]
 
 function App() {
+
+  const [activeThread, setActiveThread] = useState(null); // { studentId, studentName } or null
   // Authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [role, setRole] = useState(''); // 'parent' or 'tutor'
@@ -132,6 +142,41 @@ function App() {
     }
   }, [isLoggedIn]);
 
+  // Function to load student data from the API
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/students?role=${role}&username=${username}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to load student data');
+      }
+
+      const students = await response.json();
+      const studentMetrics = students.map((student) => ({
+        studentId: student.student_id,
+        name: student.name,
+        title: student.name, // Keep both for compatibility with your map functions
+        value: student.overall_band || 'N/A', // Used by tutor view
+        overall: student.overall_band,        // Used by parent view
+        vocab_band: student.vocab_band,
+        phonics_band: student.phonics_band,
+        writing_band: student.writing_band,
+        listening_band: student.listening_band,
+        // Add the details object for the tutor view sub-details
+        details: {
+          vocab: student.vocab_band,
+          phonics: student.phonics_band
+        }
+      }));
+      setMetrics(studentMetrics);
+    } catch (error) {
+      console.error('Error loading student data:', error);
+      setMetrics([{ title: 'Error', value: 'No data', detail: 'Unable to load student records' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
 // --- 1. LOGIN SCREEN ---
 if (!isLoggedIn) {
@@ -410,6 +455,32 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
 
 
 
+
+        {metrics.length > 0 && (
+          <div className="comm-launcher">
+            <h3>Home & Progress Notes</h3>
+            <ul>
+              {[...new Map(metrics.map((m) => [m.studentId, m])).values()].map((student) => (
+                <li key={student.studentId}>
+                  {student.name}{' '}
+                  <button onClick={() => setActiveThread({ studentId: student.studentId, studentName: student.name })}>
+                    Open thread
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {activeThread && (
+          <CommunicationThread
+            studentId={activeThread.studentId}
+            studentName={activeThread.studentName}
+            role={role}
+            username={username}
+            onClose={() => setActiveThread(null)}
+          />
+        )}
 
         <div className="content-row">
           <div className="chart-wrapper">{createLineChart()}</div>

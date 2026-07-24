@@ -571,4 +571,57 @@ async function compileClinicalReport({ format, clinicalText, rows }) {
 }
 
 
+// fetch the shared observation/recommendation thread for a student
+app.get('/communications/:studentId', (req, res) => {
+  const { studentId } = req.params;
+  const sql = `
+    SELECT id, student_id, sender_username, sender_role, message, created_at
+    FROM communications
+    WHERE student_id = ?
+    ORDER BY created_at ASC
+  `;
+  pool.query(sql, [studentId], (err, rows) => {
+    if (err) {
+      console.error('Error fetching communications:', err);
+      return res.status(500).json({ error: 'Failed to fetch communications' });
+    }
+    res.json(rows);
+  });
+});
+
+// parent submits a home observation OR tutor submits a recommendation
+app.post('/communications', (req, res) => {
+  const { studentId, senderUsername, senderRole, message } = req.body;
+
+  if (!studentId || !senderUsername || !senderRole || !message) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  if (!['parent', 'tutor'].includes(senderRole)) {
+    return res.status(400).json({ error: 'Invalid sender role' });
+  }
+  const trimmed = message.trim();
+  if (trimmed.length === 0 || trimmed.length > 2000) {
+    return res.status(400).json({ error: 'Message must be between 1 and 2000 characters' });
+  }
+
+  const sql = `
+    INSERT INTO communications (student_id, sender_username, sender_role, message)
+    VALUES (?, ?, ?, ?)
+  `;
+  pool.query(sql, [studentId, senderUsername, senderRole, trimmed], (err, result) => {
+    if (err) {
+      console.error('Error saving communication:', err);
+      return res.status(500).json({ error: 'Failed to save message' });
+    }
+    res.status(201).json({
+      id: result.insertId,
+      student_id: studentId,
+      sender_username: senderUsername,
+      sender_role: senderRole,
+      message: trimmed,
+      created_at: new Date().toISOString()
+    });
+  });
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
