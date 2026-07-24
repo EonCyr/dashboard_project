@@ -73,6 +73,8 @@ export const loadData = async (role, username, setMetrics, setIsLoading,
 
       return {
         id: student.studentid,
+        studentId: student.studentid,                         
+        parentId: student.parentid || student.parent_id || null,
         name: student.name || `Student ${student.studentid}`,
         value: bandValue,
         semester: student.semester || 'N/A',

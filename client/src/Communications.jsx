@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 
-function CommunicationThread({ studentId, studentName, role, username, onClose }) {
+function CommunicationThread({ studentId, parentId, studentName, role, username, onClose }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const loadMessages = async () => {
+    if (!studentId || !parentId) return;
     setIsLoading(true);
+    setErrorMessage('');
     try {
-      const response = await fetch(`/api/communications/${studentId}`);
+      const response = await fetch(`/api/communications/${studentId}/${parentId}`);
       if (!response.ok) throw new Error('Failed to load messages');
       const result = await response.json();
       setMessages(result);
@@ -22,12 +24,12 @@ function CommunicationThread({ studentId, studentName, role, username, onClose }
   };
 
   useEffect(() => {
-    if (studentId) loadMessages();
-  }, [studentId]);
+    if (studentId && parentId) loadMessages();
+  }, [studentId, parentId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !studentId || !parentId) return;
     setErrorMessage('');
 
     try {
@@ -36,6 +38,7 @@ function CommunicationThread({ studentId, studentName, role, username, onClose }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           studentId,
+          parentId,
           senderUsername: username,
           senderRole: role,
           message: newMessage
@@ -69,7 +72,7 @@ function CommunicationThread({ studentId, studentName, role, username, onClose }
           {messages.map((msg) => (
             <div key={msg.id} className={`comm-message ${msg.sender_role}`}>
               <p className="comm-meta">
-                <strong>{msg.sender_role === 'parent' ? 'Parent' : 'Tutor'}</strong>
+                <strong>{msg.sender_role === 'parent' ? 'Parent' : 'Therapist'}</strong>
                 {' '}({msg.sender_username}) — {new Date(msg.created_at).toLocaleString()}
               </p>
               <p>{msg.message}</p>

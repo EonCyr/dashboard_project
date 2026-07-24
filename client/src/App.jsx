@@ -7,6 +7,7 @@ import { ClinicalStudentSelector } from './ClinicalReportDownload.jsx'
 import { RelationshipManagerModal } from './RelationshipManager.jsx'
 import { StudentLineChart } from './linechart.jsx'
 import CommunicationThread from './Communications.jsx'
+import MessageParentsModal from './MessageParentsModal.jsx'
 
 const initialMetrics = [
   { title: 'Metric 1', value: 'A', detail: 'On track' },
@@ -18,10 +19,12 @@ const initialMetrics = [
 function App() {
 
   const [activeThread, setActiveThread] = useState(null); // { studentId, studentName } or null
+  const [isMessageAllOpen, setIsMessageAllOpen] = useState(false);
   // Authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [role, setRole] = useState(''); // 'parent' or 'tutor'
 
+  const [userId, setUserId] = useState(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState(''); 
 
@@ -63,6 +66,7 @@ function App() {
 
     if (response.ok) {
       setRole(result.role);
+      setUserId(result.userid);
       setIsLoggedIn(true);
     } else {
       // Use setErrorMessage instead of alert
@@ -142,42 +146,7 @@ function App() {
     }
   }, [isLoggedIn]);
 
-  // Function to load student data from the API
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/students?role=${role}&username=${username}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to load student data');
-      }
-
-      const students = await response.json();
-      const studentMetrics = students.map((student) => ({
-        studentId: student.student_id,
-        name: student.name,
-        title: student.name, // Keep both for compatibility with your map functions
-        value: student.overall_band || 'N/A', // Used by tutor view
-        overall: student.overall_band,        // Used by parent view
-        vocab_band: student.vocab_band,
-        phonics_band: student.phonics_band,
-        writing_band: student.writing_band,
-        listening_band: student.listening_band,
-        // Add the details object for the tutor view sub-details
-        details: {
-          vocab: student.vocab_band,
-          phonics: student.phonics_band
-        }
-      }));
-      setMetrics(studentMetrics);
-    } catch (error) {
-      console.error('Error loading student data:', error);
-      setMetrics([{ title: 'Error', value: 'No data', detail: 'Unable to load student records' }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  
 // --- 1. LOGIN SCREEN ---
 if (!isLoggedIn) {
   return (
@@ -463,7 +432,7 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
               {[...new Map(metrics.map((m) => [m.studentId, m])).values()].map((student) => (
                 <li key={student.studentId}>
                   {student.name}{' '}
-                  <button onClick={() => setActiveThread({ studentId: student.studentId, studentName: student.name })}>
+                  <button onClick={() => setActiveThread({ studentId: student.studentId, parentId: student.parentId, studentName: student.name })}>
                     Open thread
                   </button>
                 </li>
@@ -475,6 +444,7 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
         {activeThread && (
           <CommunicationThread
             studentId={activeThread.studentId}
+            parentId={activeThread.parentId}
             studentName={activeThread.studentName}
             role={role}
             username={username}
@@ -490,7 +460,7 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
             <>
               <ul>
                 <li><button>Add New Assessment</button></li>
-                <li><button>Message All Parents</button></li>
+                <li><button onClick={() => setIsMessageAllOpen(true)}>Message Parents</button></li>
                 <li><button onClick={() => setIsRelationshipManagerOpen(true)}>Manage Parent-Student Relationship</button></li>
               </ul>
               {metrics.length > 0 && metrics[0].id && (
@@ -501,7 +471,21 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
             <>
               <ul>
                 <li><p>Upcoming Parent-Teacher Meeting</p></li>
-                <li><button>Contact Tutor</button></li>
+                <li>
+                  <button 
+                    onClick={() => {
+                      if (metrics.length > 0) {
+                        setActiveThread({
+                          studentId: metrics[0].id,
+                          parentId: userId,
+                          studentName: metrics[0].name
+                        });
+                      }
+                    }}
+                  >
+                    Contact Tutor
+                  </button>
+                </li>
               </ul>
               <ReportDownload studentId={metrics[0]?.id} username={username} />
             </>
@@ -517,6 +501,10 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
         isLoading={isLoading}
         setIsLoading={setIsLoading}
       />
+
+      {isMessageAllOpen && (
+        <MessageParentsModal username={username} onClose={() => setIsMessageAllOpen(false)} />
+      )}
 
     </div>
   );

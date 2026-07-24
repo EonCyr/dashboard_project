@@ -238,7 +238,7 @@ app.post('/login', (req, res) => {
   const { username, password, role } = req.body; // Getting all the components needed to query the request
 
   // Check username, password, AND role if its valid in the database
-  const sql = 'SELECT username, role FROM users WHERE username = ? AND password = ? AND role = ?';
+  const sql = 'SELECT username, role, userid FROM users WHERE username = ? AND password = ? AND role = ?';
   
   pool.query(sql, [username, password, role], (err, results) => {
     if (err) {
@@ -247,7 +247,7 @@ app.post('/login', (req, res) => {
     }
 
     if (results.length > 0) {
-      res.json({ success: true, role: results[0].role });
+      res.json({ success: true, role: results[0].role, userid: results[0].userid });
     } else {
       // If role or account is not valid, an error will be thrown
       res.status(401).json({ error: 'Invalid username, password, or role selected' });
@@ -572,15 +572,15 @@ async function compileClinicalReport({ format, clinicalText, rows }) {
 
 
 // fetch the shared observation/recommendation thread for a student
-app.get('/communications/:studentId', (req, res) => {
-  const { studentId } = req.params;
+app.get('/communications/:studentId/:parentId', (req, res) => {
+  const { studentId, parentId } = req.params;
   const sql = `
-    SELECT id, student_id, sender_username, sender_role, message, created_at
+    SELECT id, studentid, parentid, sender_username, sender_role, message, created_at
     FROM communications
-    WHERE student_id = ?
+    WHERE studentid = ? AND parentid = ?
     ORDER BY created_at ASC
   `;
-  pool.query(sql, [studentId], (err, rows) => {
+  pool.query(sql, [studentId, parentId], (err, rows) => {
     if (err) {
       console.error('Error fetching communications:', err);
       return res.status(500).json({ error: 'Failed to fetch communications' });
@@ -591,12 +591,12 @@ app.get('/communications/:studentId', (req, res) => {
 
 // parent submits a home observation OR tutor submits a recommendation
 app.post('/communications', (req, res) => {
-  const { studentId, senderUsername, senderRole, message } = req.body;
+  const { studentId, parentId, senderUsername, senderRole, message } = req.body;
 
-  if (!studentId || !senderUsername || !senderRole || !message) {
+  if (!studentId || !parentId || !senderUsername || !senderRole || !message) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
-  if (!['parent', 'tutor'].includes(senderRole)) {
+  if (!['parent', 'therapist'].includes(senderRole)) {
     return res.status(400).json({ error: 'Invalid sender role' });
   }
   const trimmed = message.trim();
@@ -605,17 +605,18 @@ app.post('/communications', (req, res) => {
   }
 
   const sql = `
-    INSERT INTO communications (student_id, sender_username, sender_role, message)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO communications (studentid, parentid, sender_username, sender_role, message)
+    VALUES (?, ?, ?, ?, ?)
   `;
-  pool.query(sql, [studentId, senderUsername, senderRole, trimmed], (err, result) => {
+  pool.query(sql, [studentId, parentId, senderUsername, senderRole, trimmed], (err, result) => {
     if (err) {
       console.error('Error saving communication:', err);
       return res.status(500).json({ error: 'Failed to save message' });
     }
     res.status(201).json({
       id: result.insertId,
-      student_id: studentId,
+      studentid: studentId,
+      parentid: parentId,
       sender_username: senderUsername,
       sender_role: senderRole,
       message: trimmed,

@@ -80,6 +80,21 @@ CREATE TABLE IF NOT EXISTS assessments (
     FOREIGN KEY (studentid) REFERENCES students(studentid) ON DELETE CASCADE
 );
 
+-- For Communications
+CREATE TABLE IF NOT EXISTS communications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    studentid INT NOT NULL,
+    parentid INT NOT NULL,
+    sender_username VARCHAR(50) NOT NULL,
+    sender_role ENUM('parent', 'therapist') NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (studentid) REFERENCES students(studentid),
+    FOREIGN KEY (parentid) REFERENCES users(userid)
+);
+CREATE INDEX idx_comm_thread ON communications(studentid, parentid);
+
 
 
 -- Dummy data for testing with the new schema
@@ -142,18 +157,3 @@ INSERT IGNORE INTO parent_student (parentid, studentid, relationship) VALUES
 -- (6, 1, 3, '2023 Sem 1', 'centre1',
 --   '{"vocab":{"band":"C+","raw_score":58},"pa/phonics":{"band":"C","raw_score":54},"writing":{"band":"D+","raw_score":45},"listening/readingcomprehension":{"band":"C","raw_score":52}}',
 --   'C-');
-
--- For Communications
-CREATE TABLE IF NOT EXISTS communications (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id VARCHAR(50) NOT NULL,
-    sender_username VARCHAR(50) NOT NULL,
-    sender_role ENUM('parent', 'tutor') NOT NULL,
-    message TEXT NOT NULL,
-    is_read BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (student_id) REFERENCES students(student_id),
-    FOREIGN KEY (sender_username) REFERENCES users(username)
-);
-
-CREATE INDEX idx_comm_student ON communications(student_id);
