@@ -7,10 +7,6 @@ const { Document, Packer, Paragraph, HeadingLevel } = require('docx');
 app.use(cors());
 app.use(express.json());
 
-app.get('/', (req, res) => {
-    res.json({ message: "Dashboard API is running!" });
-});
-
 const PORT = process.env.PORT || 3000;
 
 //MySQL stuff
@@ -36,6 +32,60 @@ const connectWithRetry = () => {
 };
 
 connectWithRetry();
+
+// 1. GET Endpoint for risk
+app.get('/config/risk', async (req, res) => {
+  try {
+    const [rows] = await pool.promise().query(
+      `SELECT Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months 
+       FROM Risk_Threshold_Configurations ORDER BY Last_Updated DESC LIMIT 1`
+    );
+    
+    if (rows.length > 0) {
+      res.status(200).json({
+        critical_score: rows[0].Critical_Score_Ceiling,
+        moderate_score: rows[0].Moderate_Score_Ceiling,
+        high_performer_score: rows[0].High_Performer_Benchmark,
+        baseline_window: rows[0].Baseline_Window_Months
+      });
+    } else {
+      res.status(200).json({ critical_score: 20, moderate_score: 25, high_performer_score: 28, baseline_window: 2 });
+    }
+  } catch (err) {
+    console.error('Fetch Risk Config Error:', err);
+    res.status(500).json({ error: 'Failed to fetch risk configurations.' });
+  }
+});
+
+// 2. PUT Endpoint for risk
+app.put('/config/risk', async (req, res) => {
+  const { criticalScore, moderateScore, highPerformerScore, baselineWindow } = req.body;
+
+  if (Number(criticalScore) >= Number(moderateScore) || Number(moderateScore) >= Number(highPerformerScore)) {
+    return res.status(400).json({ error: 'Validation Error: Critical < Moderate < High Performer.' });
+  }
+  try {
+    await pool.promise().query(
+      `INSERT INTO Risk_Threshold_Configurations 
+       (Configuration_ID, Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months)
+       VALUES (1, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE 
+       Critical_Score_Ceiling = VALUES(Critical_Score_Ceiling),
+       Moderate_Score_Ceiling = VALUES(Moderate_Score_Ceiling),
+       High_Performer_Benchmark = VALUES(High_Performer_Benchmark),
+       Baseline_Window_Months = VALUES(Baseline_Window_Months)`,
+      [criticalScore, moderateScore, highPerformerScore, baselineWindow]
+    );
+
+    res.status(200).json({ message: 'Updated performance metrics successfully saved.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Database update failed.' });
+  }
+});
+
+app.get('/', (req, res) => {
+    res.json({ message: "Dashboard API is running!" });
+});
 
 app.get('/students', (req, res) => {
     const { role, username } = req.query;
@@ -626,3 +676,97 @@ app.post('/communications', (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// for risk assessment to show status
+
+// GET: /api/students/at-risk?teacherId=1
+app.get('/api/students/at-risk', async (req, res) => {
+  const teacherId = req.query.teacherId || 1; // Fallback to Teacher 1 for testing
+
+  try {
+    // 1. Get Active Risk Threshold Rules
+    const [rules] = await db.query(
+      `SELECT Stagnant_Months_Threshold, Critical_Score_Ceiling, Baseline_Window_Months 
+       FROM Risk_Threshold_Configurations ORDER BY Last_Updated DESC LIMIT 1`
+    );
+
+    const config = rules[0] || {
+      Stagnant_Months_Threshold: 3,
+      Critical_Score_Ceiling: 3,
+      Baseline_Window_Months: 2
+    };
+
+    // 2. Fetch Students assigned to this Teacher via Profiles
+    const [students] = await db.query(
+      `SELECT DISTINCT s.Student_ID, s.Enrollment_Date, s.Months_To_48_Months
+       FROM Students s
+       JOIN Student_Semester_Profiles p ON s.Student_ID = p.Student_ID
+       WHERE p.Teacher_ID = ?`,
+      [teacherId]
+    );
+
+    // 3. Calculate Risk Status for each student
+    const evaluatedStudents = await Promise.all(
+      students.map(async (student) => {
+        // Fetch historical scores for this student ordered by assessment date (newest first)
+        const [assessments] = await db.query(
+          `SELECT Mark_Score, Assessment_Date 
+           FROM Student_Assessments 
+           WHERE Student_ID = ? 
+           ORDER BY Assessment_Date DESC`,
+          [student.Student_ID]
+        );
+
+        // Alt Flow 3b: Lacks required historical baseline
+        if (assessments.length < config.Baseline_Window_Months) {
+          return {
+            ...student,
+            assessmentsCount: assessments.length,
+            latestScore: assessments[0] ? assessments[0].Mark_Score : 'N/A',
+            statusTag: 'NEUTRAL_INSUFFICIENT_DATA',
+            statusLabel: 'Insufficient Baseline Data'
+          };
+        }
+
+        const latestScore = assessments[0].Mark_Score;
+
+        // Check Stagnancy / Decline: latest score vs. older score in window
+        const previousScore = assessments[config.Baseline_Window_Months - 1].Mark_Score;
+        const isStagnantOrDeclining = latestScore <= previousScore;
+
+        // Operational Flow Step 3: Check against threshold rules
+        if (latestScore < config.Critical_Score_Ceiling || isStagnantOrDeclining) {
+          return {
+            ...student,
+            assessmentsCount: assessments.length,
+            latestScore,
+            statusTag: 'AT_RISK',
+            statusLabel: 'Action Required / At-Risk'
+          };
+        }
+
+        // Alt Flow 3a: Trajectory is stable
+        return {
+          ...student,
+          assessmentsCount: assessments.length,
+          latestScore,
+          statusTag: 'STABLE',
+          statusLabel: 'Stable Trajectory'
+        };
+      })
+    );
+
+    // Operational Flow Step 4: Sort prioritized list (AT_RISK first)
+    evaluatedStudents.sort((a, b) => {
+      const priority = { AT_RISK: 1, NEUTRAL_INSUFFICIENT_DATA: 2, STABLE: 3 };
+      return priority[a.statusTag] - priority[b.statusTag];
+    });
+
+    res.status(200).json(evaluatedStudents);
+  } catch (error) {
+    console.error('UC6 Risk Analytics Error:', error);
+    // Alt Flow 4a: Graceful failure response
+    res.status(500).json({ error: 'Failed to compute risk analytics' });
+  }
+});
+

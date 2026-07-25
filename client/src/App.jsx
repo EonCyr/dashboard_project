@@ -8,6 +8,8 @@ import { RelationshipManagerModal } from './RelationshipManager.jsx'
 import { StudentLineChart } from './linechart.jsx'
 import CommunicationThread from './Communications.jsx'
 import MessageParentsModal from './MessageParentsModal.jsx'
+import AtRiskTable from './AtRiskTable.jsx';
+import RiskConfigModal from './RiskConfigModal.jsx';
 
 const initialMetrics = [
   { title: 'Metric 1', value: 'A', detail: 'On track' },
@@ -49,6 +51,34 @@ function App() {
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentMetrics = metrics.slice(indexOfFirstRow, indexOfLastRow);
   const totalPages = Math.ceil(metrics.length / rowsPerPage);
+
+  // State to control opening/closing the UC9 modal
+  const [isRiskConfigOpen, setIsRiskConfigOpen] = useState(false);
+  //Risk configuration for risk state
+  const [riskConfig, setRiskConfig] = useState({
+  critical_score: 20,
+  moderate_score: 25,
+  high_performer_score: 28,
+  baseline_window: 2
+});
+
+// Fetch active risk thresholds when logged in
+const fetchRiskConfig = async () => {
+  try {
+    const res = await fetch('/api/config/risk');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && !data.error) setRiskConfig(data);
+  } catch (err) {
+    console.error('Failed to load risk config', err);
+  }
+};
+
+useEffect(() => {
+  if (isLoggedIn) {
+    fetchRiskConfig();
+  }
+}, [isLoggedIn]);
 
   // Login component
   const handleLogin = async (e) => {
@@ -238,11 +268,13 @@ if (!isLoggedIn) {
               {role === 'therapist' ? (
                 // Therapist view: Rendered as a structured table layout
                 <div className="table-responsive" >
+                  
                   <table className="student-table" >
                     <thead>
                       <tr>
                         <th>Student ID</th>
                         <th>Overall Band</th>
+                        <th>Risk Status</th>
                         <th>Vocab / Details</th>
                         <th>Pa / Phonics</th>
                         <th>Writing</th>
@@ -250,7 +282,29 @@ if (!isLoggedIn) {
                       </tr>
                     </thead>
                     <tbody>
-                      {currentMetrics.map((item) => (
+                      {currentMetrics.map((item) => {
+                          // risk status badge thresholds
+                        const score = parseFloat(item.totalScore) || 0;
+                        const historyCount = item.scoresCount || 2; // Default fallback count
+
+                        let statusTag = 'STABLE_PROGRESS';
+                        let statusLabel = 'On Track';
+
+                        if (historyCount < riskConfig.baseline_window) {
+                          statusTag = 'INSUFFICIENT_DATA';
+                          statusLabel = 'Needs Baseline Data';
+                        } else if (score < riskConfig.critical_score) {
+                          statusTag = 'CRITICAL_RISK';
+                          statusLabel = 'Critical Intervention Needed';
+                        } else if (score >= riskConfig.critical_score && score < riskConfig.moderate_score) {
+                          statusTag = 'MODERATE_RISK';
+                          statusLabel = 'At-Risk / Stagnant';
+                        } else if (score >= riskConfig.high_performer_score) {
+                          statusTag = 'HIGH_PERFORMER';
+                          statusLabel = 'Exceeding Milestones';
+                        }
+
+                          return (
                         <tr key={item.id} className='student-row' onClick={() => handleRowClick(item)}>
                           <td className="student-id-cell">
                               {item.id} <br />
@@ -262,6 +316,14 @@ if (!isLoggedIn) {
                                 Total: <strong>{item.totalScore}</strong>
                               </div>
                             </td>
+
+                            {/*risk status badge cell */}
+                              <td className="score-cell">
+                                <span className={`badge badge-${statusTag}`}>
+                                  {statusLabel}
+                                </span>
+                              </td>
+
                             {/* Student details */}
                             <td className="score-cell">
                               <div className="score-cell-total">Score: {item.scores.vocab.total}</div>
@@ -279,10 +341,17 @@ if (!isLoggedIn) {
                               <div className="score-cell-total">Score: {item.scores.lrc.total}</div>
                             </td>
                           </tr>
-                        ))}
+                        );
+                        })}
                       </tbody>
                     </table>
 
+                    {/*risk threshold config ui stuff*/}
+                    <ul>
+                      <li><button onClick={() => setIsRiskConfigOpen(true)}>⚙️ Configure Risk Thresholds (UC9)</button></li>
+                      <li><button onClick={() => setIsMessageAllOpen(true)}>Message Parents</button></li>
+                      <li><button onClick={() => setIsRelationshipManagerOpen(true)}>Manage Parent-Student Relationship</button></li>
+                    </ul>
                   {/* Pagination Controls */}
                   <div className="pagination-container">
                     <button 
@@ -506,6 +575,15 @@ const getScoreValue = (student, key) => student?.scores?.[key]?.total ?? 'N/A';
         <MessageParentsModal username={username} onClose={() => setIsMessageAllOpen(false)} />
       )}
 
+      <RiskConfigModal
+        isOpen={isRiskConfigOpen}
+        onClose={() => setIsRiskConfigOpen(false)}
+        username={username}
+        onSaveSuccess={() => {
+          fetchRiskConfig(); // 1. Re-fetches the new thresholds into state
+          loadData(role, username, setMetrics, setIsLoading, sortBy, sortOrder);
+        }}
+        />
     </div>
   );
 
