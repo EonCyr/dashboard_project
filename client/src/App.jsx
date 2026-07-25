@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-<<<<<<< HEAD
 import { createLineChart } from './components/linechart.jsx'
 import { loadData } from './utils/loadData.jsx' 
 import ReportDownload from './components/ReportDownload.jsx'
@@ -10,18 +9,12 @@ import { StudentModal } from './components/StudentModal.jsx'
 import { useAuth } from './hooks/useAuth.jsx'
 import CommunicationThread from './components/Communications.jsx'
 import MessageParentsModal from './components/MessageParentsModal.jsx'
-=======
-import { createLineChart } from './linechart.jsx'
-import { loadData } from './loadData.jsx' 
-import ReportDownload from './ReportDownload.jsx'
-import { ClinicalStudentSelector } from './ClinicalReportDownload.jsx'
-import { RelationshipManagerModal } from './RelationshipManager.jsx'
+
 import { StudentLineChart } from './linechart.jsx'
-import CommunicationThread from './Communications.jsx'
-import MessageParentsModal from './MessageParentsModal.jsx'
+
 import AtRiskTable from './AtRiskTable.jsx';
 import RiskConfigModal from './RiskConfigModal.jsx';
->>>>>>> clarice-risk-assess
+
 
 const initialMetrics = [
   { title: 'Metric 1', value: 'A', detail: 'On track' },
@@ -70,9 +63,8 @@ function App() {
   const currentMetrics = metrics.slice(indexOfFirstRow, indexOfLastRow);
   const totalPages = Math.ceil(metrics.length / rowsPerPage);
 
-<<<<<<< HEAD
   // Single consolidated effect for fetching api root message upon login
-=======
+
   // State to control opening/closing the UC9 modal
   const [isRiskConfigOpen, setIsRiskConfigOpen] = useState(false);
   //Risk configuration for risk state
@@ -184,7 +176,6 @@ useEffect(() => {
     }
   };
 
->>>>>>> clarice-risk-assess
   useEffect(() => {
     if (isLoggedIn) { 
       const fetchData = async () => {
@@ -284,7 +275,6 @@ useEffect(() => {
           {isLoading ? 'Loading...' : 'Load Data'}
         </button>
 
-<<<<<<< HEAD
         {/* ADAPTIVE CONTAINER: Always renders side-by-side structure regardless of data state */}
         <div className={`dashboard-content-layout ${role}`} style={{ marginTop: '20px' }}>
           
@@ -298,7 +288,7 @@ useEffect(() => {
               role === 'therapist' ? (
                 <div className="table-responsive">
                   <table className="student-table">
-=======
+
         {/* NEW: Conditional check for empty metrics */}
         {metrics.length === 0 ? (
           <div className="empty-state">
@@ -311,7 +301,6 @@ useEffect(() => {
                 <div className="table-responsive" >
                   
                   <table className="student-table" >
->>>>>>> clarice-risk-assess
                     <thead>
                       <tr>
                         <th>Student ID</th>
@@ -502,22 +491,26 @@ useEffect(() => {
         />
 
       </section>
+      
 
       {isMessageAllOpen && (
         <MessageParentsModal username={username} onClose={() => setIsMessageAllOpen(false)} />
       )}
 
       <RiskConfigModal
-        isOpen={isRiskConfigOpen}
-        onClose={() => setIsRiskConfigOpen(false)}
-        username={username}
-        onSaveSuccess={() => {
-          fetchRiskConfig(); // 1. Re-fetches the new thresholds into state
-          loadData(role, username, setMetrics, setIsLoading, sortBy, sortOrder);
-        }}
+          isOpen={isRiskConfigOpen}
+          onClose={() => setIsRiskConfigOpen(false)}
+          username={username}
+          onSaveSuccess={() => {
+            fetchRiskConfig();
+            loadData(role, username, setMetrics, setIsLoading, sortBy, sortOrder);
+          }}
         />
+      {isMessageAllOpen && (
+        <MessageParentsModal username={username} onClose={() => setIsMessageAllOpen(false)} />
+      )}
     </div>
   );
 }
 
-export default App
+export default App;
