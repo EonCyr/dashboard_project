@@ -504,6 +504,51 @@ h1 {
   border-color: #2563eb;
 }
 
+/* Risk Status Badge Styles */
+.badge {
+  padding: 5px 12px;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* 🔴 Dark Red */
+.badge-CRITICAL_RISK {
+  background-color: #ffebee;
+  color: #b71c1c;
+  border: 1px solid #ffcdd2;
+}
+
+/* 🟠 Orange */
+.badge-MODERATE_RISK {
+  background-color: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ffe0b2;
+}
+
+/* 🟡 Yellow / Gray */
+.badge-INSUFFICIENT_DATA {
+  background-color: #fffde7;
+  color: #f57f17;
+  border: 1px solid #fff9c4;
+}
+
+/* 🟢 Green */
+.badge-STABLE_PROGRESS {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #c8e6c9;
+}
+
+/* 🔵 Blue */
+.badge-HIGH_PERFORMER {
+  background-color: #e3f2fd;
+  color: #0d47a1;
+  border: 1px solid #bbdefb;
+}
+
 /* --- Media Queries --- */
 @media (max-width: 1024px) {
   .dashboard-content-layout.therapist {
