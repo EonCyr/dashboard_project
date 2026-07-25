@@ -26,10 +26,10 @@ export function createLineChart() {
           <Line dataKey="uv" stroke="#E91626" strokeWidth={2} name="My scores" />
           <XAxis 
             dataKey="semester" 
-            interval={0} // <--- Forces Recharts to show every single item
-            angle={-25}  // <--- Optional: tilts labels slightly so they don't overlap
+            interval={0}
+            angle={-25}
             textAnchor="end"
-            height={50}  // <--- Adds bottom margin space for the tilted labels
+            height={50} 
             tick={{ fontSize: 11 }}
           />
           <YAxis width="auto" label={{ value: 'Score', position: 'insideLeft', angle: -90 }} />
