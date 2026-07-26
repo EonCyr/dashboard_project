@@ -1,6 +1,6 @@
 import { render, screen, within, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { StudentLineChart } from '../components/LineChart';
+import { StudentLineChart } from '../components/linechart';
 
 jest.mock('recharts', () => ({
   ResponsiveContainer: ({ children }) => (
