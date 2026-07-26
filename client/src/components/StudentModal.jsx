@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { StudentLineChart } from './linechart.jsx';
+import { StudentLineChart } from './LineChart.jsx';
 import { calculateStudentScores } from '../utils/scoreCalculator.jsx';
 
 export function StudentModal({ selectedStudent, onClose }) {

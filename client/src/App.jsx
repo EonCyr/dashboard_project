@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import { createLineChart } from './components/linechart.jsx'
 import { loadData } from './utils/loadData.jsx' 
 import ReportDownload from './components/ReportDownload.jsx'
 import { ClinicalStudentSelector } from './components/ClinicalReportDownload.jsx'

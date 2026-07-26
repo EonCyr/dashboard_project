@@ -34,10 +34,10 @@
     "jest-environment-jsdom": "^30.4.1",
     "vite": "^8.1.1"
   },
-"jest": {
-  "testEnvironment": "jsdom",
-  "setupFilesAfterEnv": [
-    "@testing-library/jest-dom"
-  ]
-}
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": [
+      "@testing-library/jest-dom"
+    ]
+  }
 }
