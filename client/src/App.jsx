@@ -182,6 +182,7 @@ function App() {
                     </thead>
                     <tbody>
                       {currentMetrics.map((item) => (
+                      {currentMetrics.map((item) => (
                         <tr key={item.id} className='student-row' onClick={() => handleRowClick(item)}>
                           <td className="student-id-cell">
                             {item.id} <br />
