@@ -8,6 +8,7 @@ import { StudentModal } from './components/StudentModal.jsx'
 import { useAuth } from './hooks/useAuth.jsx'
 import CommunicationThread from './components/Communications.jsx'
 import MessageParentsModal from './components/MessageParentsModal.jsx'
+import { ParentModal } from './components/ParentModal';
 
 import AtRiskTable from './AtRiskTable.jsx';
 import RiskConfigModal from './RiskConfigModal.jsx';
@@ -58,6 +59,9 @@ function App() {
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentMetrics = metrics.slice(indexOfFirstRow, indexOfLastRow);
   const totalPages = Math.ceil(metrics.length / rowsPerPage);
+
+  // Parent view
+  const [parentSelectedSemester, setParentSelectedSemester] = useState(null);
 
 // State to control opening/closing the risk modal
   const [isRiskConfigOpen, setIsRiskConfigOpen] = useState(false);
@@ -285,22 +289,7 @@ useEffect(() => {
                   </div>
                 </div>
               ) : (
-                <div className="card-grid">
-                  {metrics.flatMap((student) => {
-                    const scoreCards = [
-                      { label: 'Vocab', value: student?.scores?.vocab?.total ?? 'N/A' },
-                      { label: 'Phonics', value: student?.scores?.pap?.total ?? 'N/A' },
-                      { label: 'Writing', value: student?.scores?.writing?.total ?? 'N/A' },
-                      { label: 'Listening', value: student?.scores?.lrc?.total ?? 'N/A' },
-                    ];
-                    return scoreCards.map((score) => (
-                      <article className="data-card" key={`${student.id}-${score.label}`}>
-                        <p className="card-label">{student.id}: {score.label} | {student.semester}</p>
-                        <h3>{score.value || 'N/A'}</h3>
-                      </article>
-                    ));
-                  })}
-                </div>
+                <ParentModal metrics={metrics} username={username} />
               )
             )}
 
