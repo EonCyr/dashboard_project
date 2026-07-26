@@ -183,13 +183,7 @@ useEffect(() => {
               </select>
             </label>
 
-            <button 
-              className="panel-action-btn" 
-              onClick={() => setIsRiskConfigOpen(true)}
-              style={{ marginLeft: 'auto' }}
-            >
-              Configure Risk Thresholds
-            </button>
+            
 
           </div>
         ) : null}
@@ -342,6 +336,13 @@ useEffect(() => {
                   <button className="panel-action-btn" onClick={() => setIsMessageAllOpen(true)}>Message Parents</button>
                   <button className="panel-action-btn primary" onClick={() => setIsRelationshipManagerOpen(true)}>
                     Manage Parent-Student Relationship
+                  </button>
+                  <button 
+                  className="panel-action-btn" 
+                  onClick={() => setIsRiskConfigOpen(true)}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  Configure Risk Thresholds
                   </button>
                 </div>
 
