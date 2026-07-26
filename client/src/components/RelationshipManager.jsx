@@ -18,7 +18,6 @@ export function RelationshipManagerModal({ isOpen, onClose, username, isLoading,
       }
       const data = await response.json();
       setRelationships(data);
-      setRelationshipMessage('');
     } catch (error) {
       console.error('Error loading relationships:', error);
       setRelationshipMessage(error.message || 'Unable to load relationships');
@@ -33,6 +32,11 @@ export function RelationshipManagerModal({ isOpen, onClose, username, isLoading,
       return;
     }
 
+    if (mode === 'add' && !relationshipInput) {
+      setRelationshipMessage('Please select a relationship.');
+      return;
+    }
+
     setIsLoading(true);
     setRelationshipMessage('');
 
@@ -44,19 +48,21 @@ export function RelationshipManagerModal({ isOpen, onClose, username, isLoading,
           username,
           studentid: Number(studentIdInput),
           parentid: Number(parentIdInput),
-          relationship: relationshipInput || 'Parent',
+          relationship: relationshipInput,
         }),
       });
 
       const result = await response.json();
       if (!response.ok) {
-        throw new Error(result.error || 'Unable to update relationship');
+        if (result.code === 'STUDENT_NOT_RELATED') {
+          setRelationshipMessage('This student is not associated with your account.');
+        } else {
+          setRelationshipMessage(result.error || 'Unable to update relationship');
+        }
+        return;
       }
 
       setRelationshipMessage(result.message || 'Relationship updated');
-      setStudentIdInput('');
-      setParentIdInput('');
-      setRelationshipInput('');
       await loadRelationships();
     } catch (error) {
       console.error('Relationship update failed:', error);
@@ -65,6 +71,14 @@ export function RelationshipManagerModal({ isOpen, onClose, username, isLoading,
       setIsLoading(false);
     }
   };
+
+const handleClose = () => {
+  setStudentIdInput('');
+  setParentIdInput('');
+  setRelationshipInput('');
+  setRelationshipMessage('');
+  onClose();
+};
 
   useEffect(() => {
     if (isOpen) {
@@ -75,13 +89,10 @@ export function RelationshipManagerModal({ isOpen, onClose, username, isLoading,
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <div className="modal-overlay" onClick={handleClose} role="dialog" aria-modal="true">
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-split-container">
           <h3>Parent-Student Relationship Manager</h3>
-          <button className="modal-close" onClick={onClose} aria-label="Close popup">
-            ×
-          </button>
         </div>
 
         <div style={{ display: 'grid', gap: '0.6rem', marginBottom: '0.75rem' }}>
@@ -97,12 +108,15 @@ export function RelationshipManagerModal({ isOpen, onClose, username, isLoading,
             value={parentIdInput}
             onChange={(e) => setParentIdInput(e.target.value)}
           />
-          <input
-            type="text"
-            placeholder="Relationship (e.g. Mother)"
+          <select
             value={relationshipInput}
             onChange={(e) => setRelationshipInput(e.target.value)}
-          />
+          >
+            <option value="" disabled selected hidden>Relationship</option>
+            <option value="Mother">Mother</option>
+            <option value="Father">Father</option>
+            <option value="Guardian">Guardian</option>
+          </select>
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
@@ -110,7 +124,7 @@ export function RelationshipManagerModal({ isOpen, onClose, username, isLoading,
           <button onClick={() => handleRelationshipSubmit('remove')} disabled={isLoading}>Remove Link</button>
         </div>
 
-        {relationshipMessage && <p style={{ color: '#0b5fff', margin: 0 }}>{relationshipMessage}</p>}
+        {relationshipMessage && <p style={{ color: '#dc2626', margin: 0 }}>{relationshipMessage}</p>}
 
         <p style={{ marginTop: '0.75rem', marginBottom: '0.25rem' }}><strong>Current Relationships</strong></p>
         <ul>
@@ -124,6 +138,9 @@ export function RelationshipManagerModal({ isOpen, onClose, username, isLoading,
             <li>No relationships loaded yet.</li>
           )}
         </ul>
+        <button className="modal-close-btn" onClick={handleClose}>
+          Close
+        </button>
       </div>
     </div>
   );

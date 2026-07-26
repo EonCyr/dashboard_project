@@ -223,10 +223,13 @@ app.route('/relationships')
             const therapistId = userRows[0].userid;
             const verifySql = 'SELECT 1 FROM therapist_student WHERE therapistid = ? AND studentid = ?';
 
-            pool.query(verifySql, [therapistId, studentid], (verifyErr) => {
+            pool.query(verifySql, [therapistId, studentid], (verifyErr, verifyRows) => {
                 if (verifyErr) {
                     console.error('Error verifying therapist assignment:', verifyErr);
                     return res.status(500).json({ error: 'Failed to verify access' });
+                }
+                if (!verifyRows.length) {
+                    return res.status(403).json({ error: 'This student is not associated with your account.', code: 'STUDENT_NOT_RELATED' });
                 }
 
                 const insertSql = `
@@ -267,10 +270,13 @@ app.route('/relationships')
             const therapistId = userRows[0].userid;
             const verifySql = 'SELECT 1 FROM therapist_student WHERE therapistid = ? AND studentid = ?';
 
-            pool.query(verifySql, [therapistId, studentid], (verifyErr) => {
+            pool.query(verifySql, [therapistId, studentid], (verifyErr, verifyRows) => {
                 if (verifyErr) {
                     console.error('Error verifying therapist assignment:', verifyErr);
                     return res.status(500).json({ error: 'Failed to verify access' });
+                }
+                if (!verifyRows.length) {
+                    return res.status(403).json({ error: 'This student is not associated with your account.', code: 'STUDENT_NOT_RELATED' });
                 }
 
                 const deleteSql = 'DELETE FROM parent_student WHERE parentid = ? AND studentid = ?';
