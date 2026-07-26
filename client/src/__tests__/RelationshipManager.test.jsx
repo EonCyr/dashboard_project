@@ -133,7 +133,7 @@ test('shows success message after a valid add', async () => {
   await screen.findByText('Relationship added successfully');
 });
 
-test('shows a specific message when the student is not related to this therapist', async () => {
+test('shows error when the student is not related to this therapist', async () => {
   mockFetchSequence([
     { ok: true, body: [] }, // initial load
     { ok: false, body: { error: 'This student is not associated with your account.', code: 'STUDENT_NOT_RELATED' }, },
@@ -158,6 +158,37 @@ test('shows a specific message when the student is not related to this therapist
 
   expect(
     await screen.findByText('This student is not associated with your account.') ).toBeInTheDocument();
+});
+
+test('shows error when the parent ID does not exist', async () => {
+  mockFetchSequence([
+    { ok: true, body: [] }, // initial load
+    {
+      ok: false,
+      body: { error: 'No parent account exists with that ID.', code: 'PARENT_NOT_FOUND' },
+    },
+  ]);
+
+  render(
+    <RelationshipManagerModal
+      isOpen={true}
+      onClose={noop}
+      username="therapist1"
+      isLoading={false}
+      setIsLoading={setIsLoading}
+    />
+  );
+
+  await screen.findByText('No relationships loaded yet.');
+
+  fireEvent.change(screen.getByPlaceholderText('Student ID'), { target: { value: '10' } });
+  fireEvent.change(screen.getByPlaceholderText('Parent ID'), { target: { value: '999' } });
+  fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Mother' } });
+  fireEvent.click(screen.getByText('Add Link'));
+
+  expect(
+    await screen.findByText('No parent account exists with that ID.')
+  ).toBeInTheDocument();
 });
 
 test('clears the input fields when the close button is clicked', async () => {
