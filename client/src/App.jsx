@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
+<<<<<<< HEAD
 import { createLineChart } from './components/linechart.jsx'
 import { loadData } from './utils/loadData.jsx' 
 import ReportDownload from './components/ReportDownload.jsx'
@@ -9,6 +10,16 @@ import { StudentModal } from './components/StudentModal.jsx'
 import { useAuth } from './hooks/useAuth.jsx'
 import CommunicationThread from './components/Communications.jsx'
 import MessageParentsModal from './components/MessageParentsModal.jsx'
+=======
+import { createLineChart } from './linechart.jsx'
+import { loadData } from './loadData.jsx' 
+import ReportDownload from './ReportDownload.jsx'
+import { ClinicalStudentSelector } from './ClinicalReportDownload.jsx'
+import { RelationshipManagerModal } from './RelationshipManager.jsx'
+import { StudentLineChart } from './linechart.jsx'
+import CommunicationThread from './Communications.jsx'
+import MessageParentsModal from './MessageParentsModal.jsx'
+>>>>>>> parent of 0240029 (risk uc 6 &9 no erroororor)
 
 const initialMetrics = [
   { title: 'Metric 1', value: 'A', detail: 'On track' },
@@ -57,7 +68,93 @@ function App() {
   const currentMetrics = metrics.slice(indexOfFirstRow, indexOfLastRow);
   const totalPages = Math.ceil(metrics.length / rowsPerPage);
 
+<<<<<<< HEAD
   // Single consolidated effect for fetching api root message upon login
+=======
+  // Login component
+  const handleLogin = async (e) => {
+  e.preventDefault();
+  setErrorMessage(''); // Clear previous errors
+
+  try { //Tries to fetch the login API
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, role })
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      setRole(result.role);
+      setUserId(result.userid);
+      setIsLoggedIn(true);
+    } else {
+      // Use setErrorMessage instead of alert
+      setErrorMessage(result.error || 'Login failed');
+    }
+  } catch (error) {
+    console.error('Login request failed:', error);
+    // Use setErrorMessage instead of alert
+    setErrorMessage('Could not connect to server. Please check your network.');
+  }
+  }
+
+// 2. HandleRowClick
+
+  const handleRowClick = async (student) => {
+    setSelectedStudent(student);
+    try {
+      const response = await fetch(`/api/student-history/${student.id}`);
+      const rawHistory = await response.json();
+      
+      const formattedHistory = rawHistory.map((row) => {
+        const parsed = typeof row.scores === 'string' ? JSON.parse(row.scores) : row.scores || {};
+        const band = (row.band || student.value || 'B').toUpperCase();
+        
+        let weights = { vocab: 0.25, pap: 0.35, writing: 0.20, lrc: 0.20 };
+        if (band.startsWith('A')) weights = { vocab: 0.5, pap: 0.35, writing: 0.075, lrc: 0.075 };
+        else if (band.startsWith('B')) weights = { vocab: 0.15, pap: 0.50, writing: 0.175, lrc: 0.175 };
+        else if (band.startsWith('C')) weights = { vocab: 0.15, pap: 0.35, writing: 0.25, lrc: 0.25 };
+
+        const calc = (obj) => Object.values(obj || {}).reduce((acc, v) => acc + (parseFloat(v) || 0), 0);
+        
+        const total = (
+          (calc(parsed.vocab) * weights.vocab) +
+          (calc(parsed['pa/phonics']) * weights.pap) +
+          (calc(parsed.writing) * weights.writing) +
+          (calc(parsed['listening/readingcomprehension']) * weights.lrc)
+        ).toFixed(2);
+
+        // Helper to format items for the modal rows
+        const formatItems = (obj) => Object.entries(obj || {}).map(([key, val]) => ({
+          label: key.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()),
+          value: val ?? 'N/A'
+        }));
+        return {
+          semester: row.semester, 
+          band: band,
+          totalScore: total,
+          score: parseFloat(total), // <--- Add this property for the chart to plot correctly
+          scores: {
+            vocab: { total: calc(parsed.vocab), items: formatItems(parsed.vocab) },
+            pap: { total: calc(parsed['pa/phonics']), items: formatItems(parsed['pa/phonics']) },
+            writing: { total: calc(parsed.writing), items: formatItems(parsed.writing) },
+            lrc: { total: calc(parsed['listening/readingcomprehension']), items: formatItems(parsed['listening/readingcomprehension']) },
+          }
+        };
+      });
+
+      setStudentHistory(formattedHistory);
+      // Default to the matching table row semester or the latest one
+      const currentMatch = formattedHistory.find(h => h.semester === student.semester) || formattedHistory[formattedHistory.length - 1];
+      setActiveSemesterData(currentMatch);
+    } catch (err) {
+      console.error('Failed to load history graph data', err);
+    }
+  };
+
+>>>>>>> parent of 0240029 (risk uc 6 &9 no erroororor)
   useEffect(() => {
     if (isLoggedIn) { 
       const fetchData = async () => {
@@ -157,6 +254,7 @@ function App() {
           {isLoading ? 'Loading...' : 'Load Data'}
         </button>
 
+<<<<<<< HEAD
         {/* ADAPTIVE CONTAINER: Always renders side-by-side structure regardless of data state */}
         <div className={`dashboard-content-layout ${role}`} style={{ marginTop: '20px' }}>
           
@@ -170,6 +268,19 @@ function App() {
               role === 'therapist' ? (
                 <div className="table-responsive">
                   <table className="student-table">
+=======
+        {/* NEW: Conditional check for empty metrics */}
+        {metrics.length === 0 ? (
+          <div className="empty-state">
+            <p>No student data loaded. Please click the "Load Data" button to view progress.</p>
+          </div>
+        ) : (
+          <div>
+              {role === 'therapist' ? (
+                // Therapist view: Rendered as a structured table layout
+                <div className="table-responsive" >
+                  <table className="student-table" >
+>>>>>>> parent of 0240029 (risk uc 6 &9 no erroororor)
                     <thead>
                       <tr>
                         <th>Student ID</th>
@@ -182,6 +293,7 @@ function App() {
                     </thead>
                     <tbody>
                       {currentMetrics.map((item) => (
+<<<<<<< HEAD
                       {currentMetrics.map((item) => (
                         <tr key={item.id} className='student-row' onClick={() => handleRowClick(item)}>
                           <td className="student-id-cell">
@@ -202,6 +314,39 @@ function App() {
                       ))}
                     </tbody>
                   </table>
+=======
+                        <tr key={item.id} className='student-row' onClick={() => handleRowClick(item)}>
+                          <td className="student-id-cell">
+                              {item.id} <br />
+                              <span className="student-semester">({item.semester})</span>
+                            </td>
+                            <td>
+                              <span className="band-badge">{item.value}</span>
+                              <div className="total-score-text">
+                                Total: <strong>{item.totalScore}</strong>
+                              </div>
+                            </td>
+                            {/* Student details */}
+                            <td className="score-cell">
+                              <div className="score-cell-total">Score: {item.scores.vocab.total}</div>
+                            </td>
+
+                            <td className="score-cell">
+                              <div className="score-cell-total">Score: {item.scores.pap.total}</div>
+                            </td>
+
+                            <td className="score-cell">
+                              <div className="score-cell-total">Score: {item.scores.writing.total}</div>
+                            </td>
+
+                            <td className="score-cell">
+                              <div className="score-cell-total">Score: {item.scores.lrc.total}</div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+>>>>>>> parent of 0240029 (risk uc 6 &9 no erroororor)
 
                   {/* Pagination Controls */}
                   <div className="pagination-container">

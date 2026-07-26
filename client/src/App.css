@@ -502,6 +502,7 @@ h1 {
   background-color: #2563eb;
   color: #ffffff;
   border-color: #2563eb;
+<<<<<<< HEAD
 }
 
 /* --- Media Queries --- */
@@ -519,4 +520,6 @@ h1 {
   .parent-detailed-view {
     grid-template-columns: 1fr;
   }
+=======
+>>>>>>> parent of 0240029 (risk uc 6 &9 no erroororor)
 }
