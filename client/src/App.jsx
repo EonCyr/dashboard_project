@@ -182,6 +182,15 @@ useEffect(() => {
                 <option value="desc">Descending</option>
               </select>
             </label>
+
+            <button 
+              className="panel-action-btn" 
+              onClick={() => setIsRiskConfigOpen(true)}
+              style={{ marginLeft: 'auto' }}
+            >
+              Configure Risk Thresholds
+            </button>
+
           </div>
         ) : null}
         
