@@ -56,6 +56,8 @@ export function RelationshipManagerModal({ isOpen, onClose, username, isLoading,
       if (!response.ok) {
         if (result.code === 'STUDENT_NOT_RELATED') {
           setRelationshipMessage('This student is not associated with your account.');
+        } else if (result.code === 'PARENT_NOT_FOUND') {
+          setRelationshipMessage('No parent account exists with that ID.');
         } else {
           setRelationshipMessage(result.error || 'Unable to update relationship');
         }
