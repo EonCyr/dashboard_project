@@ -8,12 +8,26 @@ export const calculateStudentScores = (rawScores, studentBand) => {
   else if (band.startsWith('C')) weights = { vocab: 0.15, pap: 0.35, writing: 0.25, lrc: 0.25 };
 
   const calc = (obj) => Object.values(obj || {}).reduce((acc, v) => acc + (parseFloat(v) || 0), 0);
+
+  const categoryTotals = {
+    vocab: calc(parsed.vocab),
+    pap: calc(parsed['pa/phonics']),
+    writing: calc(parsed.writing),
+    lrc: calc(parsed['listening/readingcomprehension']),
+  };
+
+  const weightedCategoryTotals = {
+    vocab: Number((categoryTotals.vocab * weights.vocab).toFixed(2)),
+    pap: Number((categoryTotals.pap * weights.pap).toFixed(2)),
+    writing: Number((categoryTotals.writing * weights.writing).toFixed(2)),
+    lrc: Number((categoryTotals.lrc * weights.lrc).toFixed(2)),
+  };
   
   const total = (
-    (calc(parsed.vocab) * weights.vocab) +
-    (calc(parsed['pa/phonics']) * weights.pap) +
-    (calc(parsed.writing) * weights.writing) +
-    (calc(parsed['listening/readingcomprehension']) * weights.lrc)
+    weightedCategoryTotals.vocab +
+    weightedCategoryTotals.pap +
+    weightedCategoryTotals.writing +
+    weightedCategoryTotals.lrc
   ).toFixed(2);
 
   const formatItems = (obj) => Object.entries(obj || {}).map(([key, val]) => ({
@@ -26,10 +40,10 @@ export const calculateStudentScores = (rawScores, studentBand) => {
     totalScore: total,
     score: parseFloat(total),
     scores: {
-      vocab: { total: calc(parsed.vocab), items: formatItems(parsed.vocab) },
-      pap: { total: calc(parsed['pa/phonics']), items: formatItems(parsed['pa/phonics']) },
-      writing: { total: calc(parsed.writing), items: formatItems(parsed.writing) },
-      lrc: { total: calc(parsed['listening/readingcomprehension']), items: formatItems(parsed['listening/readingcomprehension']) },
+      vocab: { total: categoryTotals.vocab, weightedTotal: weightedCategoryTotals.vocab, items: formatItems(parsed.vocab) },
+      pap: { total: categoryTotals.pap, weightedTotal: weightedCategoryTotals.pap, items: formatItems(parsed['pa/phonics']) },
+      writing: { total: categoryTotals.writing, weightedTotal: weightedCategoryTotals.writing, items: formatItems(parsed.writing) },
+      lrc: { total: categoryTotals.lrc, weightedTotal: weightedCategoryTotals.lrc, items: formatItems(parsed['listening/readingcomprehension']) },
     }
   };
 };

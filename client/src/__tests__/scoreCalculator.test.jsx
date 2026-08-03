@@ -39,5 +39,20 @@ describe('scoreCalculator Utility', () => {
     expect(typeof result.score).toBe('number');
   });
 
+  it('should expose weighted totals for each category that can be compared to the overall score', () => {
+    const sampleScores = {
+      vocab: { q1: 10 },
+      'pa/phonics': { q1: 20 },
+      writing: { q1: 30 },
+      'listening/readingcomprehension': { q1: 40 }
+    };
+
+    const result = calculateStudentScores(sampleScores, 'C');
+
+    expect(result.scores.vocab.weightedTotal).toBe(1.5);
+    expect(result.scores.pap.weightedTotal).toBe(7);
+    expect(result.scores.writing.weightedTotal).toBe(7.5);
+    expect(result.scores.lrc.weightedTotal).toBe(10);
+  });
 
 });
