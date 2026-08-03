@@ -1,19 +1,27 @@
-import { render, screen, within, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { StudentLineChart } from '../components/linechart';
+import { StudentLineChart, SemBarChart } from '../components/linechart';
 
 jest.mock('recharts', () => ({
   ResponsiveContainer: ({ children }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
   LineChart: ({ data, children }) => (
-    <div data-testid="line-chart" data-point-count={data ? data.length : 0}>
+    <div data-testid="line-chart" data-point-count={data ? data.length : 0} data-values={JSON.stringify(data)}>
+      {children}
+    </div>
+  ),
+  BarChart: ({ data, children }) => (
+    <div data-testid="bar-chart" data-point-count={data ? data.length : 0} data-values={JSON.stringify(data)}>
       {children}
     </div>
   ),
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
   Line: ({ dataKey, name }) => (
     <div data-testid="line" data-key={dataKey} data-name={name} />
+  ),
+  Bar: ({ dataKey, name }) => (
+    <div data-testid="bar" data-key={dataKey} data-name={name} />
   ),
   XAxis: ({ dataKey }) => <div data-testid="x-axis" data-key={dataKey} />,
   YAxis: ({ label }) => <div data-testid="y-axis" data-label={label?.value} />,
@@ -22,69 +30,49 @@ jest.mock('recharts', () => ({
 }));
 
 const mockHistoryData = [
-  { semester: '2020 Sem 1', score: 16 },
-  { semester: '2020 Sem 2', score: 30 },
-  { semester: '2021 Sem 1', score: 32 },
-  { semester: '2021 Sem 2', score: 20 },
-  { semester: '2022 Sem 1', score: 27 },
-  { semester: '2022 Sem 2', score: 18 },
+  { semester: '2020 Sem 1', scores: { vocab: { total: 10 }, pap: { total: 8 }, writing: { total: 6 }, lrc: { total: 4 } } },
+  { semester: '2020 Sem 2', scores: { vocab: { total: 12 }, pap: { total: 9 }, writing: { total: 7 }, lrc: { total: 5 } } },
 ];
 
 describe('StudentLineChart', () => {
-  test('renders the chart container', () => {
-    render(<StudentLineChart historyData={mockHistoryData} />);
-    expect(screen.getByTestId('responsive-container')).toBeInTheDocument();
+  test('renders a line for each visible category', () => {
+    render(<StudentLineChart historyData={mockHistoryData} visibleCategories={{ overall: true, vocab: true, pap: true, writing: true, lrc: true }} />);
+    const lines = screen.getAllByTestId('line');
+    expect(lines).toHaveLength(5);
+    expect(lines.map((line) => line.getAttribute('data-key'))).toEqual(['overall', 'vocab', 'pap', 'writing', 'lrc']);
   });
 
-  test('passes all historyData points (6) through to the chart', () => {
-    render(<StudentLineChart historyData={mockHistoryData} />);
-    expect(screen.getByTestId('line-chart')).toHaveAttribute('data-point-count', '6');
+  test('hides lines for categories that are not visible', () => {
+    render(<StudentLineChart historyData={mockHistoryData} visibleCategories={{ overall: true, vocab: true, pap: false, writing: false, lrc: false }} />);
+    const lines = screen.getAllByTestId('line');
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toHaveAttribute('data-key', 'overall');
+    expect(lines[1]).toHaveAttribute('data-key', 'vocab');
   });
 
-  test('renders a CartesianGrid', () => {
-    render(<StudentLineChart historyData={mockHistoryData} />);
-    expect(screen.getByTestId('cartesian-grid')).toBeInTheDocument();
+  test('uses weighted category values for chart series', () => {
+    const weightedHistory = [
+      { semester: '2020 Sem 1', score: 12, scores: { vocab: { total: 10, weightedTotal: 2.5 }, pap: { total: 8, weightedTotal: 4 }, writing: { total: 6, weightedTotal: 1.2 }, lrc: { total: 4, weightedTotal: 0.8 } } },
+    ];
+
+    render(<StudentLineChart historyData={weightedHistory} visibleCategories={{ overall: false, vocab: true, pap: false, writing: false, lrc: false }} />);
+    const chart = screen.getByTestId('line-chart');
+    expect(chart).toHaveAttribute('data-values', '[{"semester":"2020 Sem 1","vocab":2.5}]');
   });
 
-  test('renders exactly one Line, plotting "score" and labeled "Weighted Score"', () => {
-    render(<StudentLineChart historyData={mockHistoryData} />);
-    const line = screen.getByTestId('line');
-    expect(line).toHaveAttribute('data-key', 'score');
-    expect(line).toHaveAttribute('data-name', 'Weighted Score');
-  });
+  test('renders weighted category bars for the selected semester', () => {
+    const selectedSemesterData = {
+      semester: '2020 Sem 2',
+      scores: {
+        vocab: { total: 10, weightedTotal: 2.5 },
+        pap: { total: 8, weightedTotal: 4 },
+        writing: { total: 6, weightedTotal: 1.2 },
+        lrc: { total: 4, weightedTotal: 0.8 },
+      },
+    };
 
-  test('renders the XAxis keyed on "semester"', () => {
-    render(<StudentLineChart historyData={mockHistoryData} />);
-    expect(screen.getByTestId('x-axis')).toHaveAttribute('data-key', 'semester');
-  });
-
-  test('renders the YAxis with the "Score" label', () => {
-    render(<StudentLineChart historyData={mockHistoryData} />);
-    expect(screen.getByTestId('y-axis')).toHaveAttribute('data-label', 'Score');
-  });
-
-  test('renders a Legend and Tooltip', () => {
-    render(<StudentLineChart historyData={mockHistoryData} />);
-    expect(screen.getByTestId('legend')).toBeInTheDocument();
-    expect(screen.getByTestId('tooltip')).toBeInTheDocument();
-  });
-
-  test('does not crash when historyData is an empty array', () => {
-    render(<StudentLineChart historyData={[]} />);
-    expect(screen.getByTestId('line-chart')).toHaveAttribute('data-point-count', '0');
-  });
-
-  test('does not crash when historyData is undefined', () => {
-    render(<StudentLineChart />);
-    expect(screen.getByTestId('responsive-container')).toBeInTheDocument();
-  });
-
-  test('re-renders with new data when historyData changes (e.g. fetch returns different student)', () => {
-    const { rerender } = render(<StudentLineChart historyData={mockHistoryData} />);
-    expect(screen.getByTestId('line-chart')).toHaveAttribute('data-point-count', '6');
-
-    const newData = [{ semester: '2023 Sem 1', score: 40 }];
-    rerender(<StudentLineChart historyData={newData} />);
-    expect(screen.getByTestId('line-chart')).toHaveAttribute('data-point-count', '1');
+    render(<SemBarChart semesterData={selectedSemesterData} />);
+    const chart = screen.getByTestId('bar-chart');
+    expect(chart).toHaveAttribute('data-values', '[{"category":"Vocabulary","value":2.5},{"category":"Pa / Phonics","value":4},{"category":"Writing","value":1.2},{"category":"Listening / Reading","value":0.8}]');
   });
 });

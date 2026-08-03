@@ -412,6 +412,29 @@ h1 {
 .modal-left-column {
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chart-row {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  justify-content: space-evenly;
+}
+
+.chart-panel {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chart-panel h4 {
+  margin: 0;
+  color: #1e3a8a;
 }
 
 .modal-right-column {

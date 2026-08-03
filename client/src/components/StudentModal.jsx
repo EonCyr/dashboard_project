@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react';
-import { StudentLineChart } from './linechart.jsx';
+import { StudentLineChart, SemBarChart } from './linechart.jsx';
 import { calculateStudentScores } from '../utils/scoreCalculator.jsx';
 
 export function StudentModal({ selectedStudent, onClose }) {
   const [studentHistory, setStudentHistory] = useState([]);
   const [activeSemesterData, setActiveSemesterData] = useState(null);
+  const [visibleCategories, setVisibleCategories] = useState({
+    overall: true,
+    vocab: false,
+    pap: false,
+    writing: false,
+    lrc: false,
+  });
 
   useEffect(() => {
     if (!selectedStudent) return;
@@ -59,9 +66,27 @@ export function StudentModal({ selectedStudent, onClose }) {
         <div className="modal-split-container">
           {/* LEFT COLUMN: Line Chart */}
           <div className="modal-left-column">
-            <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '6px', height: '100%' }}>
-              <h4 style={{ margin: '0 0 10px 0', color: '#1e3a8a' }}>Historical Performance Trend</h4>
-              <StudentLineChart historyData={studentHistory} />
+            <div className="chart-panel">
+              <h4>Semester Overview</h4>
+              <SemBarChart semesterData={activeSemesterData} />
+            </div>
+            <div className="chart-panel">
+              <h4>Historical Performance Trend</h4>
+              <div className="semester-tabs-container" style={{ margin: '0 0 12px 0' }}>
+                {['overall', 'vocab', 'pap', 'writing', 'lrc'].map((catKey) => {
+                  const categoryTitles = { overall: 'Overall', vocab: 'Vocabulary', pap: 'Pa / Phonics', writing: 'Writing', lrc: 'Listening / Reading' };
+                  return (
+                    <button
+                      key={catKey}
+                      className={`semester-tab-btn ${visibleCategories[catKey] ? 'active' : ''}`}
+                      onClick={() => setVisibleCategories((prev) => ({ ...prev, [catKey]: !prev[catKey] }))}
+                    >
+                      {categoryTitles[catKey]}
+                    </button>
+                  );
+                })}
+              </div>
+              <StudentLineChart historyData={studentHistory} visibleCategories={visibleCategories} />
             </div>
           </div>
 
