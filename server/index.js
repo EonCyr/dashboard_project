@@ -11,6 +11,26 @@ app.get('/', (req, res) => {
     res.json({ message: "Dashboard API is running!" });
 });
 
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+
+// Configure Multer to upload directly to the root 'data' directory
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dataDir = path.join(__dirname, '..', 'data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    cb(null, dataDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  }
+});
+
+const upload = multer({ storage: storage });
+
 const PORT = process.env.PORT || 3000;
 
 //MySQL stuff
@@ -89,6 +109,101 @@ app.put('/config/risk', async (req, res) => {
 
 app.get('/', (req, res) => {
     res.json({ message: "Dashboard API is running!" });
+});
+
+
+app.post('/assessments/single', async (req, res) => {
+  // console.log('Received raw req.body:', req.body); //For debugging purposes
+  try {
+    const data = req.body;
+    const val = (v) => (v !== undefined && v !== null && v !== '' && !isNaN(v) ? Number(v) : 0);
+    const incomingScores = data.scores || {};
+
+    const assessmentRecord = {
+      therapistid: val(data.therapistId) || null, // Optional if passed from frontend
+      studentid: val(data.studentId),
+      semester: data.semester || '2026 Sem 1',
+      centre: data.centre || 'Default Centre',
+      scores: JSON.stringify({
+        vocab: {
+          picture_naming: val(incomingScores.vocab?.picture_naming),
+          picture_description: val(incomingScores.vocab?.picture_description)
+        },
+        "pa/phonics": {
+          fluency: val(incomingScores["pa/phonics"]?.fluency),
+          phonics: val(incomingScores["pa/phonics"]?.phonics),
+          word_spelling: val(incomingScores["pa/phonics"]?.word_spelling),
+          pa_identification: val(incomingScores["pa/phonics"]?.pa_identification)
+        },
+        writing: {
+          edit_d1: val(incomingScores.writing?.edit_d1),
+          edit_d2: val(incomingScores.writing?.edit_d2),
+          edit_d3: val(incomingScores.writing?.edit_d3),
+          letter_formation: val(incomingScores.writing?.letter_formation),
+          narrative_writing: val(incomingScores.writing?.narrative_writing),
+          exposition_writing: val(incomingScores.writing?.exposition_writing)
+        },
+        "listening/readingcomprehension": {
+          persuasive_writing: val(incomingScores["listening/readingcomprehension"]?.persuasive_writing),
+          reading_comprehension: val(incomingScores["listening/readingcomprehension"]?.reading_comprehension),
+          listening_comprehension: val(incomingScores["listening/readingcomprehension"]?.listening_comprehension)
+        }
+      })
+    };
+
+    const query = `
+      INSERT INTO assessments (studentid, semester, centre, scores) 
+      VALUES (?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE 
+        centre = VALUES(centre),
+        scores = VALUES(scores);
+    `;
+
+    const values = [
+      assessmentRecord.studentid,
+      assessmentRecord.semester,
+      assessmentRecord.centre,
+      assessmentRecord.scores
+    ];
+
+    const executeQuery = (sql, vals) => {
+      return new Promise((resolve, reject) => {
+        pool.query(sql, vals, (err, results) => {
+          if (err) return reject(err);
+          resolve(results);
+        });
+      });
+    };
+
+    await executeQuery(query, values);
+
+    res.status(200).json({ 
+      message: 'Assessment saved successfully (updated if semester already existed)!' 
+    });
+  } catch (error) {
+    console.error('Error saving individual assessment:', error);
+    res.status(500).json({ error: 'Failed to save individual assessment' });
+  }
+});
+
+// 2. POST Endpoint for Bulk File Import (Triggers your Python Ingestion Script)
+app.post('/assessments/bulk-import', upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded.' });
+  }
+
+  const filePath = req.file.path;
+  const { exec } = require('child_process');
+
+  exec(`python3 /app/ingestor/ingest.py --file "${filePath}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error('Bulk Import Exec Error:', error);
+      console.error('Python STDERR:', stderr);
+      return res.status(500).json({ error: `Failed to process bulk upload script: ${stderr || error.message}` });
+    }
+
+    res.status(200).json({ message: 'Mass file imported successfully!' });
+  });
 });
 
 

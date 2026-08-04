@@ -77,8 +77,10 @@ CREATE TABLE IF NOT EXISTS assessments (
             scores
         )),
     band VARCHAR(10),
-    FOREIGN KEY (studentid) REFERENCES students(studentid) ON DELETE CASCADE
+    FOREIGN KEY (studentid) REFERENCES students(studentid) ON DELETE CASCADE,
+    CONSTRAINT unique_student_semester UNIQUE (studentid, semester) -- Testing this line
 );
+
 
 -- For Communications
 CREATE TABLE IF NOT EXISTS communications (
@@ -99,10 +101,10 @@ CREATE INDEX idx_comm_thread ON communications(studentid, parentid);
 
 -- Dummy data for testing with the new schema
 INSERT IGNORE INTO users (userid, username, password, email, phone_number, role) VALUES
-(1, 'therapist1', 'password123', 'therapist1@example.com', '11111111', 'therapist'),
-(2, 'parent1', 'password123', 'parent1@example.com', '22222222', 'parent'),
-(3, 'parent2', 'password123', 'parent2@example.com', '33333333', 'parent'),
-(4, 'parent3', 'password123', 'parent3@example.com', '44444444', 'parent');
+(1, 'therapist1', 'pw123', 'therapist1@example.com', '11111111', 'therapist'),
+(2, 'parent1', 'pw123', 'parent1@example.com', '22222222', 'parent'),
+(3, 'parent2', 'pw123', 'parent2@example.com', '33333333', 'parent'),
+(4, 'parent3', 'pw123', 'parent3@example.com', '44444444', 'parent');
 
 INSERT IGNORE INTO therapists (userid, centre) VALUES
 (1, 'centre1');

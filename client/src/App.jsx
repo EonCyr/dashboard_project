@@ -9,6 +9,7 @@ import { useAuth } from './hooks/useAuth.jsx'
 import CommunicationThread from './components/Communications.jsx'
 import MessageParentsModal from './components/MessageParentsModal.jsx'
 import { ParentModal } from './components/ParentModal';
+import AddAssessmentModal from './components/AddAssessmentModal.jsx';
 
 import AtRiskTable from './AtRiskTable.jsx';
 import RiskConfigModal from './RiskConfigModal.jsx';
@@ -24,6 +25,7 @@ function App() {
 
   const [activeThread, setActiveThread] = useState(null); 
   const [isMessageAllOpen, setIsMessageAllOpen] = useState(false);
+  const [isAddAssessmentOpen, setIsAddAssessmentOpen] = useState(false);
 
   // Authentication state
   const {
@@ -320,7 +322,17 @@ useEffect(() => {
             {role === 'therapist' ? (
               <div className="panel-section">
                 <div className="tool-button-group">
-                  <button className="panel-action-btn">Add New Assessment</button>
+                  <button 
+                    type="button"
+                    className="panel-action-btn" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      console.log("Button clicked!");
+                      setIsAddAssessmentOpen(true);
+                    }}
+                  >
+                    Add New Assessment
+                  </button>
                   <button className="panel-action-btn" onClick={() => setIsMessageAllOpen(true)}>Message Parents</button>
                   <button className="panel-action-btn primary" onClick={() => setIsRelationshipManagerOpen(true)}>
                     Manage Parent-Student Relationship
@@ -368,6 +380,15 @@ useEffect(() => {
           </aside>
 
         </div>
+
+        {/* THERAPIST ADD ASSESSMENT MODAL */}
+        <AddAssessmentModal
+          isOpen={isAddAssessmentOpen}
+          onClose={() => setIsAddAssessmentOpen(false)}
+          onSuccess={() => {
+            loadData(role, username, setMetrics, setIsLoading, sortBy, sortOrder);
+          }}
+        />
 
         {/* IN-DEPTH STUDENT MODAL OVERLAY */}
         <StudentModal 

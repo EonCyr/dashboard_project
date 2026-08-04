@@ -766,6 +766,87 @@ app.get('/api/students/at-risk', async (req, res) => {
   }
 });
 
+const multer = require('multer');
+const path = require('path');
+
+// Configure disk storage to point to the root 'data' folder
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, 'data')); // Saves directly into the /data folder
+  },
+  filename: function (req, file, cb) {
+    // Keep a clean filename or timestamp it if needed
+    cb(null, file.originalname);
+  }
+});
+
+const upload = multer({ storage: storage });
+
+// 1. POST Endpoint for Single Individual Assessment Entry
+app.post('/assessments/single', async (req, res) => {
+  const { studentId, semester, scores } = req.body;
+
+  if (!studentId || !semester || !scores) {
+    return res.status(400).json({ error: 'Missing required assessment fields.' });
+  }
+
+  try {
+    const [studentCheck] = await pool.promise().query(
+      'SELECT centre FROM students WHERE studentid = ?', 
+      [studentId]
+    );
+
+    if (studentCheck.length === 0) {
+      return res.status(404).json({ error: 'Student ID not found in database.' });
+    }
+
+    const centre = studentCheck[0].centre || 'centre1';
+    const band = req.body.band || 'B'; 
+
+    const sql = `
+      INSERT INTO assessments (studentid, semester, centre, scores, band) 
+      VALUES (?, ?, ?, ?, ?)
+    `;
+
+    await pool.promise().query(sql, [
+      studentId, 
+      semester, 
+      centre, 
+      JSON.stringify(scores), 
+      band
+    ]);
+
+    res.status(200).json({ message: 'Assessment added successfully!' });
+  } catch (err) {
+    console.error('Single Assessment Insert Error:', err);
+    res.status(500).json({ error: 'Failed to save individual assessment.' });
+  }
+});
+
+// 2. POST Endpoint for Bulk File Import (Triggers your Python Ingestion Script)
+app.post('/assessments/bulk-import', upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded.' });
+  }
+
+  const filePath = req.file.path;
+  // Corrected from 'child_path' to 'child_process'
+  const { exec } = require('child_process');
+
+  exec(`python3 ingest.py --file ${filePath}`, { cwd: '/app' }, (error, stdout, stderr) => {
+    const fs = require('fs');
+    fs.unlink(filePath, () => {}); // Clean up temporary file
+
+    if (error) {
+      console.error('Bulk Import Exec Error:', error);
+      console.error('Python STDERR:', stderr);
+      return res.status(500).json({ error: `Failed to process bulk upload script: ${stderr || error.message}` });
+    }
+
+    res.status(200).json({ message: 'Mass file imported successfully!' });
+  });
+});
+
 module.exports = {
   app,
   pool,

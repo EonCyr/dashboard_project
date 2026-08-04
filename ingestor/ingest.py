@@ -1,7 +1,12 @@
 import json
 import pandas as pd
 import mysql.connector
+import argparse
 import os
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--file", type=str, default="/app/data/student_data.xlsx", help="Path to the Excel file containing student data")
+args = parser.parse_args()
 
 # Connect to database
 conn = mysql.connector.connect(
@@ -13,7 +18,7 @@ conn = mysql.connector.connect(
 cursor = conn.cursor()
 
 # Load data
-df = pd.read_excel("/app/data/student_data.xlsx")
+df = pd.read_excel(args.file)
 
 def get_clean_val(val, default="Unknown"):
     return val if pd.notnull(val) else default
@@ -175,10 +180,21 @@ for _, row in df.iterrows():
     sem = get_clean_val(row.get('Semester'), "Unknown")
     therapistid = int(str(teacher_id).lower().replace('teacher', '').strip())
     
-    cursor.execute("""
-        INSERT INTO assessments (studentid, therapistid, semester, centre, scores, band) 
+    # cursor.execute("""
+    #     INSERT INTO assessments (studentid, therapistid, semester, centre, scores, band) 
+    #     VALUES (%s, %s, %s, %s, %s, %s)
+    # """, (student_id, therapistid, sem, centre, scores_json, current_band))
+    
+    # Change your query from standard INSERT to include ON DUPLICATE KEY UPDATE:
+    sql = """
+        INSERT INTO assessments (therapistid, studentid, semester, centre, scores, band) 
         VALUES (%s, %s, %s, %s, %s, %s)
-    """, (student_id, therapistid, sem, centre, scores_json, current_band))
+        ON DUPLICATE KEY UPDATE 
+            centre = VALUES(centre),
+            scores = VALUES(scores),
+            band = VALUES(band);
+    """
+    cursor.execute(sql, (therapistid, student_id, sem, centre, scores_json, current_band))
 
 conn.commit()
 cursor.close()
