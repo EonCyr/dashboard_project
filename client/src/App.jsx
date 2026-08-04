@@ -21,6 +21,33 @@ const initialMetrics = [
   { title: 'Metric 4', value: '98.2%', detail: 'amazing' },
 ];
 
+function getRiskStatus(item, riskConfig) {
+  const score = parseFloat(item.totalScore) || 0;
+  const historyCount = item.scoresCount || 2;
+
+  const studentBand = (item.value || 'B').charAt(0).toUpperCase();
+  const config = riskConfig?.[studentBand] || riskConfig?.['B'];
+
+  let statusTag = 'STABLE_PROGRESS';
+  let statusLabel = 'On Track';
+
+  if (historyCount < riskConfig.baseline_window) {
+    statusTag = 'INSUFFICIENT_DATA';
+    statusLabel = 'Needs Baseline Data';
+  } else if (score < riskConfig.critical_score) {
+    statusTag = 'CRITICAL_RISK';
+    statusLabel = 'Critical Intervention Needed';
+  } else if (score >= riskConfig.critical_score && score < riskConfig.moderate_score) {
+    statusTag = 'MODERATE_RISK';
+    statusLabel = 'At-Risk / Stagnant';
+  } else if (score >= riskConfig.high_performer_score) {
+    statusTag = 'HIGH_PERFORMER';
+    statusLabel = 'Exceeding Milestones';
+  }
+
+  return { statusTag, statusLabel };
+}
+
 function App() {
 
   const [activeThread, setActiveThread] = useState(null); 
@@ -51,28 +78,46 @@ function App() {
   const [sortBy, setSortBy] = useState('none');
   const [sortOrder, setSortOrder] = useState('asc');
   
+  // State to control opening/closing the risk modal
+  const [isRiskConfigOpen, setIsRiskConfigOpen] = useState(false);
+  //Risk configuration for risk state
+  const [riskConfig, setRiskConfig] = useState({
+    A: { critical_score: 22, moderate_score: 26, high_performer_score: 29, baseline_window: 2 },
+    B: { critical_score: 20, moderate_score: 25, high_performer_score: 28, baseline_window: 2 },
+    C: { critical_score: 18, moderate_score: 22, high_performer_score: 25, baseline_window: 2 }
+  });
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  // Filter metrics based on search query
+  const filteredMetrics = searchQuery.trim() === ''
+    ? metrics
+    : metrics.filter((item) => {
+        const q = searchQuery.trim().toLowerCase();
+        const idMatch = String(item.id) === searchQuery.trim();
+        const bandMatch = (item.value || '').toLowerCase().includes(q);
+        const { statusLabel } = getRiskStatus(item, riskConfig);
+        const statusMatch = statusLabel.toLowerCase().includes(q);
+        return idMatch || bandMatch || statusMatch;
+      });
+  
   // States for the student pop up
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
 
+  useEffect(() => {
+  setCurrentPage(1);
+  }, [searchQuery]);
+
   // Calculate sliced metrics for the current page
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentMetrics = metrics.slice(indexOfFirstRow, indexOfLastRow);
-  const totalPages = Math.ceil(metrics.length / rowsPerPage);
+  const currentMetrics = filteredMetrics.slice(indexOfFirstRow, indexOfLastRow);
+  const totalPages = Math.ceil(filteredMetrics.length / rowsPerPage);
 
   // Parent view
   const [parentSelectedSemester, setParentSelectedSemester] = useState(null);
 
-// State to control opening/closing the risk modal
-  const [isRiskConfigOpen, setIsRiskConfigOpen] = useState(false);
-  //Risk configuration for risk state
-const [riskConfig, setRiskConfig] = useState({
-  A: { critical_score: 22, moderate_score: 26, high_performer_score: 29, baseline_window: 2 },
-  B: { critical_score: 20, moderate_score: 25, high_performer_score: 28, baseline_window: 2 },
-  C: { critical_score: 18, moderate_score: 22, high_performer_score: 25, baseline_window: 2 }
-});
 
 // Fetch active risk thresholds when logged in
 const fetchRiskConfig = async () => {
@@ -191,11 +236,22 @@ useEffect(() => {
 
           </div>
         ) : null}
-        
-        <button className="load-button" onClick={() => loadData(role, username, setMetrics, setIsLoading, sortBy, sortOrder)} disabled={isLoading}>
-          {isLoading ? 'Loading...' : 'Load Data'}
-        </button>
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <button className="load-button" onClick={() => loadData(role, username, setMetrics, setIsLoading, sortBy, sortOrder)} disabled={isLoading}>
+            {isLoading ? 'Loading...' : 'Load Data'}
+          </button>
+
+          {role === 'therapist' && (
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by ID, band (e.g. B4), or risk status..."
+              style={{ padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: '8px', flex: '1', minWidth: '220px', maxWidth: '360px' }}
+            />
+          )}
+        </div>
         {/* ADAPTIVE CONTAINER: Always renders side-by-side structure regardless of data state */}
         <div className={`dashboard-content-layout ${role}`} style={{ marginTop: '20px' }}>
           
@@ -204,6 +260,10 @@ useEffect(() => {
             {metrics.length === 0 ? (
               <div className="empty-state" style={{ padding: '40px', textAlign: 'center', background: '#f9f9f9', borderRadius: '12px', border: '1px dashed #ddd' }}>
                 <p style={{ color: '#666', margin: 0 }}>No student data loaded. Please click the "Load Data" button to view progress.</p>
+              </div>
+            ) : role === 'therapist' && filteredMetrics.length === 0 ? (
+              <div className="empty-state" style={{ padding: '40px', textAlign: 'center', background: '#f9f9f9', borderRadius: '12px', border: '1px dashed #ddd' }}>
+                <p style={{ color: '#666', margin: 0 }}>No students match "{searchQuery}". Try a different ID, band, or risk status.</p>
               </div>
             ) : (
               role === 'therapist' ? (
@@ -222,54 +282,31 @@ useEffect(() => {
                     </thead>
                     <tbody>
                       {currentMetrics.map((item) => {
-                          // risk status badge thresholds
-                        const score = parseFloat(item.totalScore) || 0;
-                        const historyCount = item.scoresCount || 2; // Default fallback count
-
-                        const studentBand = (item.value || 'B').charAt(0).toUpperCase();
-                        const config = riskConfig?.[studentBand] || riskConfig?.['B'];
-
-                        let statusTag = 'STABLE_PROGRESS';
-                        let statusLabel = 'On Track';
-
-                        if (historyCount < riskConfig.baseline_window) {
-                          statusTag = 'INSUFFICIENT_DATA';
-                          statusLabel = 'Needs Baseline Data';
-                        } else if (score < riskConfig.critical_score) {
-                          statusTag = 'CRITICAL_RISK';
-                          statusLabel = 'Critical Intervention Needed';
-                        } else if (score >= riskConfig.critical_score && score < riskConfig.moderate_score) {
-                          statusTag = 'MODERATE_RISK';
-                          statusLabel = 'At-Risk / Stagnant';
-                        } else if (score >= riskConfig.high_performer_score) {
-                          statusTag = 'HIGH_PERFORMER';
-                          statusLabel = 'Exceeding Milestones';
-                        }
-
+                          const { statusTag, statusLabel } = getRiskStatus(item, riskConfig);
                           return (
-                        <tr key={item.id} className='student-row' onClick={() => handleRowClick(item)}>
-                          <td className="student-id-cell">
-                            {item.id} <br />
-                            <span className="student-semester">({item.semester})</span>
-                          </td>
-                          <td>
-                            <span className="band-badge">{item.value}</span>
-                            <div className="total-score-text">
-                              Total: <strong>{item.totalScore}</strong>
-                            </div>
-                          </td>
+                          <tr key={item.id} className='student-row' onClick={() => handleRowClick(item)}>
+                            <td className="student-id-cell">
+                              {item.id} <br />
+                              <span className="student-semester">({item.semester})</span>
+                            </td>
+                            <td>
+                              <span className="band-badge">{item.value}</span>
+                              <div className="total-score-text">
+                                Total: <strong>{item.totalScore}</strong>
+                              </div>
+                            </td>
 
-                          <td className="score-cell">
-                            <span className={`badge badge-${statusTag}`}>{statusLabel}</span>
-                          </td>
+                            <td className="score-cell">
+                              <span className={`badge badge-${statusTag}`}>{statusLabel}</span>
+                            </td>
 
-                          <td className="score-cell"><div className="score-cell-total">Score: {item.scores.vocab.total}</div></td>
-                          <td className="score-cell"><div className="score-cell-total">Score: {item.scores.pap.total}</div></td>
-                          <td className="score-cell"><div className="score-cell-total">Score: {item.scores.writing.total}</div></td>
-                          <td className="score-cell"><div className="score-cell-total">Score: {item.scores.lrc.total}</div></td>
-                        </tr>
-                      );
-                    })}
+                            <td className="score-cell"><div className="score-cell-total">Score: {item.scores.vocab.total}</div></td>
+                            <td className="score-cell"><div className="score-cell-total">Score: {item.scores.pap.total}</div></td>
+                            <td className="score-cell"><div className="score-cell-total">Score: {item.scores.writing.total}</div></td>
+                            <td className="score-cell"><div className="score-cell-total">Score: {item.scores.lrc.total}</div></td>
+                          </tr>
+                          );
+                      })}
                     </tbody>
                   </table>
 
