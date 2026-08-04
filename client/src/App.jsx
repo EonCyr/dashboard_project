@@ -73,6 +73,29 @@ function App() {
   const [sortBy, setSortBy] = useState('none');
   const [sortOrder, setSortOrder] = useState('asc');
   
+  // State to control opening/closing the risk modal
+  const [isRiskConfigOpen, setIsRiskConfigOpen] = useState(false);
+  //Risk configuration for risk state
+  const [riskConfig, setRiskConfig] = useState({
+  critical_score: 20,
+  moderate_score: 25,
+  high_performer_score: 28,
+  baseline_window: 2
+  });
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  // Filter metrics based on search query
+  const filteredMetrics = searchQuery.trim() === ''
+    ? metrics
+    : metrics.filter((item) => {
+        const q = searchQuery.trim().toLowerCase();
+        const idMatch = String(item.id) === searchQuery.trim();
+        const bandMatch = (item.value || '').toLowerCase().includes(q);
+        const { statusLabel } = getRiskStatus(item, riskConfig);
+        const statusMatch = statusLabel.toLowerCase().includes(q);
+        return idMatch || bandMatch || statusMatch;
+      });
+  
   // States for the student pop up
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -91,15 +114,6 @@ function App() {
   // Parent view
   const [parentSelectedSemester, setParentSelectedSemester] = useState(null);
 
-  // State to control opening/closing the risk modal
-  const [isRiskConfigOpen, setIsRiskConfigOpen] = useState(false);
-  //Risk configuration for risk state
-  const [riskConfig, setRiskConfig] = useState({
-  critical_score: 20,
-  moderate_score: 25,
-  high_performer_score: 28,
-  baseline_window: 2
-  });
 
 // Fetch active risk thresholds when logged in
 const fetchRiskConfig = async () => {
@@ -138,19 +152,6 @@ useEffect(() => {
   const handleRowClick = (student) => {
     setSelectedStudent(student);
   };
-
-  const [searchQuery, setSearchQuery] = useState('');
-  // Filter metrics based on search query
-  const filteredMetrics = searchQuery.trim() === ''
-    ? metrics
-    : metrics.filter((item) => {
-        const q = searchQuery.trim().toLowerCase();
-        const idMatch = String(item.id) === searchQuery.trim();
-        const bandMatch = (item.value || '').toLowerCase().includes(q);
-        const { statusLabel } = getRiskStatus(item, riskConfig);
-        const statusMatch = statusLabel.toLowerCase().includes(q);
-        return idMatch || bandMatch || statusMatch;
-      });
 
   // --- 1. LOGIN SCREEN ---
   if (!isLoggedIn) {
