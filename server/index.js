@@ -57,7 +57,7 @@ const connectWithRetry = () => {
 
 connectWithRetry();
 
-// GET /api/config/risk - Returns thresholds grouped by Band
+// GET /api/config/risk (or /config/risk)
 app.get('/config/risk', async (req, res) => {
   try {
     const [rows] = await pool.promise().query(
@@ -69,20 +69,30 @@ app.get('/config/risk', async (req, res) => {
        FROM Risk_Threshold_Configurations`
     );
 
-    // Key by Band: { 'A': {...}, 'B': {...}, 'C': {...} }
     const bandConfigs = {};
-    rows.forEach((r) => { bandConfigs[r.band] = r; });
+    rows.forEach((r) => { 
+      bandConfigs[r.band] = {
+        critical_score: r.critical_score,
+        moderate_score: r.moderate_score,
+        high_performer_score: r.high_performer_score,
+        baseline_window: r.baseline_window
+      }; 
+    });
 
     return res.status(200).json(bandConfigs);
   } catch (err) {
+    console.error('Fetch Risk Config Error:', err);
     return res.status(500).json({ error: err.message });
   }
 });
 
-// PUT /api/config/risk - Updates specific Band threshold
+// PUT /api/config/risk (or /config/risk)
 app.put('/config/risk', async (req, res) => {
   const { band, criticalScore, moderateScore, highPerformerScore, baselineWindow } = req.body;
+
   try {
+    const targetBand = band || 'B';
+    
     await pool.promise().query(
       `INSERT INTO Risk_Threshold_Configurations 
        (Band, Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months)
@@ -92,11 +102,12 @@ app.put('/config/risk', async (req, res) => {
        Moderate_Score_Ceiling = VALUES(Moderate_Score_Ceiling),
        High_Performer_Benchmark = VALUES(High_Performer_Benchmark),
        Baseline_Window_Months = VALUES(Baseline_Window_Months)`,
-      [band || 'B', criticalScore, moderateScore, highPerformerScore, baselineWindow]
+      [targetBand, criticalScore, moderateScore, highPerformerScore, baselineWindow]
     );
 
-    return res.status(200).json({ message: `Band ${band} threshold updated successfully!` });
+    return res.status(200).json({ message: `Band ${targetBand} threshold updated successfully!` });
   } catch (err) {
+    console.error('Update Risk Config Error:', err);
     return res.status(500).json({ error: err.message });
   }
 });
