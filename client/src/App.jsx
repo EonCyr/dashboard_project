@@ -385,6 +385,7 @@ useEffect(() => {
         <AddAssessmentModal
           isOpen={isAddAssessmentOpen}
           onClose={() => setIsAddAssessmentOpen(false)}
+          currentTherapistId={userId}
           onSuccess={() => {
             loadData(role, username, setMetrics, setIsLoading, sortBy, sortOrder);
           }}

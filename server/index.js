@@ -111,19 +111,20 @@ app.get('/', (req, res) => {
     res.json({ message: "Dashboard API is running!" });
 });
 
-
+// 1. POST Endpoint for Individual Assessment Submission
 app.post('/assessments/single', async (req, res) => {
-  // console.log('Received raw req.body:', req.body); //For debugging purposes
+  console.log('Received raw req.body:', req.body); //For debugging purposes
   try {
     const data = req.body;
     const val = (v) => (v !== undefined && v !== null && v !== '' && !isNaN(v) ? Number(v) : 0);
     const incomingScores = data.scores || {};
 
     const assessmentRecord = {
-      therapistid: val(data.therapistId) || null, // Optional if passed from frontend
+      therapistid: val(data.therapistId) || null,
       studentid: val(data.studentId),
       semester: data.semester || '2026 Sem 1',
       centre: data.centre || 'Default Centre',
+      band: data.band && data.band.trim() !== '' ? data.band.trim() : null,
       scores: JSON.stringify({
         vocab: {
           picture_naming: val(incomingScores.vocab?.picture_naming),
@@ -152,18 +153,24 @@ app.post('/assessments/single', async (req, res) => {
     };
 
     const query = `
-      INSERT INTO assessments (studentid, semester, centre, scores) 
-      VALUES (?, ?, ?, ?)
+      INSERT INTO assessments (therapistid, studentid, semester, centre, scores, band) 
+      VALUES (?, ?, ?, ?, ?, COALESCE(?, (SELECT current_band FROM students WHERE studentid = ?)))
       ON DUPLICATE KEY UPDATE 
+        therapistid = VALUES(therapistid),
         centre = VALUES(centre),
-        scores = VALUES(scores);
+        scores = VALUES(scores),
+        band = COALESCE(VALUES(band), assessments.band, (SELECT current_band FROM students WHERE studentid = ?));
     `;
 
     const values = [
+      assessmentRecord.therapistid,
       assessmentRecord.studentid,
       assessmentRecord.semester,
       assessmentRecord.centre,
-      assessmentRecord.scores
+      assessmentRecord.scores,
+      assessmentRecord.band,
+      assessmentRecord.studentid,
+      assessmentRecord.studentid
     ];
 
     const executeQuery = (sql, vals) => {
@@ -177,9 +184,7 @@ app.post('/assessments/single', async (req, res) => {
 
     await executeQuery(query, values);
 
-    res.status(200).json({ 
-      message: 'Assessment saved successfully (updated if semester already existed)!' 
-    });
+    res.status(200).json({ message: 'Assessment saved successfully with therapist ID!' });
   } catch (error) {
     console.error('Error saving individual assessment:', error);
     res.status(500).json({ error: 'Failed to save individual assessment' });

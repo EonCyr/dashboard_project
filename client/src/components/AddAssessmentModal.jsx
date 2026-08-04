@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import './AddAssessmentModal.css'; 
 
-export default function AddAssessmentModal({ isOpen, onClose, onSuccess }) {
+export default function AddAssessmentModal({ isOpen, onClose, onSuccess , currentTherapistId = 1}) {
   const [activeTab, setActiveTab] = useState('individual');
   
   // Nested sub-component form state matching your exact JSON structure
   const [formData, setFormData] = useState({
     studentId: '',
     semester: '',
+    centre: '',
+    band: '',
+    therapistId: currentTherapistId || '',
     vocab: { picture_naming: '', picture_description: '' },
     pa_phonics: { fluency: '', phonics: '', word_spelling: '', pa_identification: '' },
     writing: { edit_d1: '', edit_d2: '', edit_d3: '', letter_formation: '', narrative_writing: '', exposition_writing: '' },
@@ -29,6 +32,8 @@ export default function AddAssessmentModal({ isOpen, onClose, onSuccess }) {
     const payload = {
       studentId: formData.studentId,
       semester: formData.semester,
+      band: formData.band, // <-- Add this line here
+      therapistId: formData.therapistId,
       scores: {
         "vocab": {
           "picture_naming": parseFloat(formData.vocab.picture_naming) || 0,
@@ -96,6 +101,18 @@ export default function AddAssessmentModal({ isOpen, onClose, onSuccess }) {
               </div>
               <div className="form-group"><label>Semester</label>
                 <input type="text" placeholder="2026 Sem 1" value={formData.semester} onChange={(e) => setFormData({...formData, semester: e.target.value})} required />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group" style={{ width: '100%' }}>
+                <label>Band (Optional)</label>
+                <input
+                  type="text"
+                  name="band"
+                  value={formData.band}
+                  onChange={(e) => setFormData({ ...formData, band: e.target.value })}
+                  placeholder="e.g. C7, B5"
+                />
               </div>
             </div>
 
