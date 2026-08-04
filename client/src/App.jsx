@@ -68,11 +68,10 @@ function App() {
 // State to control opening/closing the risk modal
   const [isRiskConfigOpen, setIsRiskConfigOpen] = useState(false);
   //Risk configuration for risk state
-  const [riskConfig, setRiskConfig] = useState({
-  critical_score: 20,
-  moderate_score: 25,
-  high_performer_score: 28,
-  baseline_window: 2
+const [riskConfig, setRiskConfig] = useState({
+  A: { critical_score: 22, moderate_score: 26, high_performer_score: 29, baseline_window: 2 },
+  B: { critical_score: 20, moderate_score: 25, high_performer_score: 28, baseline_window: 2 },
+  C: { critical_score: 18, moderate_score: 22, high_performer_score: 25, baseline_window: 2 }
 });
 
 // Fetch active risk thresholds when logged in
@@ -226,6 +225,9 @@ useEffect(() => {
                           // risk status badge thresholds
                         const score = parseFloat(item.totalScore) || 0;
                         const historyCount = item.scoresCount || 2; // Default fallback count
+
+                        const studentBand = (item.value || 'B').charAt(0).toUpperCase();
+                        const config = riskConfig?.[studentBand] || riskConfig?.['B'];
 
                         let statusTag = 'STABLE_PROGRESS';
                         let statusLabel = 'On Track';

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
 export default function RiskConfigModal({ isOpen, onClose, username, onSaveSuccess }) {
-  const [criticalScore, setCriticalScore] = useState(20);
-  const [moderateScore, setModerateScore] = useState(25);
-  const [highPerformerScore, setHighPerformerScore] = useState(28);
-  const [baselineWindow, setBaselineWindow] = useState(2);
-  
+  const [selectedBand, setSelectedBand] = useState('A');
+  const [bandConfigs, setBandConfigs] = useState({
+    A: { criticalScore: 22, moderateScore: 26, highPerformerScore: 29, baselineWindow: 2 },
+    B: { criticalScore: 20, moderateScore: 25, highPerformerScore: 28, baselineWindow: 2 },
+    C: { criticalScore: 18, moderateScore: 22, highPerformerScore: 25, baselineWindow: 2 }
+  });
   const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -15,27 +16,46 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
       fetch('/api/config/risk')
         .then((res) => res.json())
         .then((data) => {
-          if (data) {
-            setCriticalScore(data.critical_score ?? 20);
-            setModerateScore(data.moderate_score ?? 25);
-            setHighPerformerScore(data.high_performer_score ?? 28);
-            setBaselineWindow(data.baseline_window ?? 2);
+          if (data && (data.A || data.B || data.C)) {
+            setBandConfigs((prev) => ({
+              A: data.A ? mapDataToState(data.A) : prev.A,
+              B: data.B ? mapDataToState(data.B) : prev.B,
+              C: data.C ? mapDataToState(data.C) : prev.C
+            }));
           }
         })
         .catch(() => setStatusMessage({ text: 'Loaded default threshold settings.', type: 'info' }));
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  const mapDataToState = (d) => ({
+    criticalScore: d.critical_score ?? 20,
+    moderateScore: d.moderate_score ?? 25,
+    highPerformerScore: d.high_performer_score ?? 28,
+    baselineWindow: d.baseline_window ?? 2
+  });
 
+  if (!isOpen) return null;
+  const currentConfig = bandConfigs[selectedBand];
+
+  const handleInputChange = (field, value) => {
+    setBandConfigs((prev) => ({
+      ...prev,
+      [selectedBand]: {
+        ...prev[selectedBand],
+        [field]: value
+      }
+    }));
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatusMessage({ text: '', type: '' });
 
-    // Operational Flow 5 & Alt Flow 5a: Validation checks
-    if (criticalScore >= moderateScore || moderateScore >= highPerformerScore) {
+    const { criticalScore, moderateScore, highPerformerScore, baselineWindow } = currentConfig;
+
+    if (Number(criticalScore) >= Number(moderateScore) || Number(moderateScore) >= Number(highPerformerScore)) {
       setStatusMessage({ 
-        text: 'Validation Error: Thresholds must strictly follow Critical < Moderate < High Performer.', 
+        text: `Validation Error: Band ${selectedBand} thresholds must follow Critical < Moderate < High Performer.`, 
         type: 'error' 
       });
       return;
@@ -48,6 +68,7 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          band: selectedBand,
           criticalScore: Number(criticalScore),
           moderateScore: Number(moderateScore),
           highPerformerScore: Number(highPerformerScore),
@@ -78,7 +99,29 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
     <div className="modal-overlay">
       <div className="modal-card" style={{ maxWidth: '500px' }}>
         <h2>UC9: Configure Risk Assessment Metrics</h2>
-        <p className="modal-subtitle">Set quantitative threshold rules used across therapist dashboards.</p>
+        
+        {/* Band Switcher Tabs */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+          {['A', 'B', 'C'].map((band) => (
+            <button
+              key={band}
+              type="button"
+              onClick={() => setSelectedBand(band)}
+              style={{
+                flex: 1,
+                padding: '8px',
+                borderRadius: '4px',
+                border: '1px solid #007bff',
+                background: selectedBand === band ? '#007bff' : '#fff',
+                color: selectedBand === band ? '#fff' : '#007bff',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              Band {band}
+            </button>
+          ))}
+        </div>
 
         {statusMessage.text && (
           <div className={`alert-${statusMessage.type}`} style={{ padding: '8px 12px', marginBottom: '15px', borderRadius: '4px' }}>
@@ -87,25 +130,23 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
         )}
 
         <form onSubmit={handleSubmit}>
-            
           <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontWeight: 'bold' }}>Critical Risk Score Ceiling (&lt;)</label>
+            <label style={{ display: 'block', fontWeight: 'bold' }}>Critical Risk Ceiling (&lt;)</label>
             <input 
               type="number" 
-              value={criticalScore} 
-              onChange={(e) => setCriticalScore(e.target.value)}
+              value={currentConfig.criticalScore} 
+              onChange={(e) => handleInputChange('criticalScore', e.target.value)}
               required 
               style={{ width: '100%', padding: '8px', marginTop: '4px' }}
             />
-            
           </div>
 
           <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontWeight: 'bold' }}>Moderate / At-Risk Score Ceiling (&lt;)</label>
+            <label style={{ display: 'block', fontWeight: 'bold' }}>Moderate / At-Risk Ceiling (&lt;)</label>
             <input 
               type="number" 
-              value={moderateScore} 
-              onChange={(e) => setModerateScore(e.target.value)}
+              value={currentConfig.moderateScore} 
+              onChange={(e) => handleInputChange('moderateScore', e.target.value)}
               required 
               style={{ width: '100%', padding: '8px', marginTop: '4px' }}
             />
@@ -115,8 +156,8 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
             <label style={{ display: 'block', fontWeight: 'bold' }}>High Performer Benchmark (&ge;)</label>
             <input 
               type="number" 
-              value={highPerformerScore} 
-              onChange={(e) => setHighPerformerScore(e.target.value)}
+              value={currentConfig.highPerformerScore} 
+              onChange={(e) => handleInputChange('highPerformerScore', e.target.value)}
               required 
               style={{ width: '100%', padding: '8px', marginTop: '4px' }}
             />
@@ -126,8 +167,8 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
             <label style={{ display: 'block', fontWeight: 'bold' }}>Baseline Required Assessments</label>
             <input 
               type="number" 
-              value={baselineWindow} 
-              onChange={(e) => setBaselineWindow(e.target.value)}
+              value={currentConfig.baselineWindow} 
+              onChange={(e) => handleInputChange('baselineWindow', e.target.value)}
               required 
               style={{ width: '100%', padding: '8px', marginTop: '4px' }}
             />
@@ -138,7 +179,7 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
               Cancel
             </button>
             <button type="submit" disabled={isSubmitting} style={{ background: '#1e3a8a', color: '#fff', padding: '8px 16px', borderRadius: '4px' }}>
-              {isSubmitting ? 'Saving...' : 'Apply & Sync Metrics'}
+              {isSubmitting ? 'Saving...' : `Save Band ${selectedBand}`}
             </button>
           </div>
         </form>

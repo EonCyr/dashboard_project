@@ -57,53 +57,47 @@ const connectWithRetry = () => {
 
 connectWithRetry();
 
-// 1. GET Endpoint for risk
+// GET /api/config/risk - Returns thresholds grouped by Band
 app.get('/config/risk', async (req, res) => {
   try {
     const [rows] = await pool.promise().query(
-      `SELECT Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months 
-       FROM Risk_Threshold_Configurations ORDER BY Last_Updated DESC LIMIT 1`
+      `SELECT Band AS band, 
+              Critical_Score_Ceiling AS critical_score, 
+              Moderate_Score_Ceiling AS moderate_score, 
+              High_Performer_Benchmark AS high_performer_score, 
+              Baseline_Window_Months AS baseline_window
+       FROM Risk_Threshold_Configurations`
     );
-    
-    if (rows.length > 0) {
-      res.status(200).json({
-        critical_score: rows[0].Critical_Score_Ceiling,
-        moderate_score: rows[0].Moderate_Score_Ceiling,
-        high_performer_score: rows[0].High_Performer_Benchmark,
-        baseline_window: rows[0].Baseline_Window_Months
-      });
-    } else {
-      res.status(200).json({ critical_score: 20, moderate_score: 25, high_performer_score: 28, baseline_window: 2 });
-    }
+
+    // Key by Band: { 'A': {...}, 'B': {...}, 'C': {...} }
+    const bandConfigs = {};
+    rows.forEach((r) => { bandConfigs[r.band] = r; });
+
+    return res.status(200).json(bandConfigs);
   } catch (err) {
-    console.error('Fetch Risk Config Error:', err);
-    res.status(500).json({ error: 'Failed to fetch risk configurations.' });
+    return res.status(500).json({ error: err.message });
   }
 });
 
-// 2. PUT Endpoint for risk
+// PUT /api/config/risk - Updates specific Band threshold
 app.put('/config/risk', async (req, res) => {
-  const { criticalScore, moderateScore, highPerformerScore, baselineWindow } = req.body;
-
-  if (Number(criticalScore) >= Number(moderateScore) || Number(moderateScore) >= Number(highPerformerScore)) {
-    return res.status(400).json({ error: 'Validation Error: Critical < Moderate < High Performer.' });
-  }
+  const { band, criticalScore, moderateScore, highPerformerScore, baselineWindow } = req.body;
   try {
     await pool.promise().query(
       `INSERT INTO Risk_Threshold_Configurations 
-       (Configuration_ID, Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months)
-       VALUES (1, ?, ?, ?, ?)
+       (Band, Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months)
+       VALUES (?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE 
        Critical_Score_Ceiling = VALUES(Critical_Score_Ceiling),
        Moderate_Score_Ceiling = VALUES(Moderate_Score_Ceiling),
        High_Performer_Benchmark = VALUES(High_Performer_Benchmark),
        Baseline_Window_Months = VALUES(Baseline_Window_Months)`,
-      [criticalScore, moderateScore, highPerformerScore, baselineWindow]
+      [band || 'B', criticalScore, moderateScore, highPerformerScore, baselineWindow]
     );
 
-    res.status(200).json({ message: 'Updated performance metrics successfully saved.' });
+    return res.status(200).json({ message: `Band ${band} threshold updated successfully!` });
   } catch (err) {
-    res.status(500).json({ error: 'Database update failed.' });
+    return res.status(500).json({ error: err.message });
   }
 });
 
