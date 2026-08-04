@@ -43,8 +43,8 @@ export function StudentModal({ selectedStudent, onClose }) {
   if (!selectedStudent || !activeSemesterData) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-card">
+    <div className="page-view-container">
+    <div className="page-card">
         <h2>Student ID: {selectedStudent.id} In-Depth Report</h2>
         <p className="modal-subtitle">
           Overall Band: <strong>{activeSemesterData.band}</strong> | Weighted Score: <strong>{activeSemesterData.totalScore}</strong>

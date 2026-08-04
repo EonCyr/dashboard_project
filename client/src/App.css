@@ -134,6 +134,11 @@ h1 {
   gap: 24px;
 }
 
+/*this is for indepth student metrics*/
+.dashboard-content-layout.therapist:has(.master-detail-container) {
+  display: block;
+}
+
 .main-data-section {
   min-width: 0;
 }
@@ -377,6 +382,46 @@ h1 {
 }
 
 /* --- Modal Overlay & Card Styles --- */
+
+/*no overlay*/
+
+.page-view-container {
+  width: 100%;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.page-card {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+/* Ensure side-by-side split layout */
+.master-detail-container {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Sidebar stays on the left */
+.student-list-sidebar {
+  width: 300px;
+  min-width: 280px;
+  flex-shrink: 0;
+}
+
+/* Report expands to fill remaining space on the right */
+.student-detail-main {
+  flex: 1;
+  width: 100%;
+}
+
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -848,4 +893,135 @@ css
   color: #ffffff;
   border-color: #d9534f;
   font-weight: bold;
+}
+
+/* --- LEFT SIDEBAR CONTAINER --- */
+.student-list-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.sidebar-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sidebar-top h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 700;
+}
+
+/* --- STUDENT CARD TAB --- */
+.student-card-tab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.student-card-tab:hover {
+  background: #f1f5f9;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Selected Active State (Matches the dark green border/fill in your mockup) */
+.student-card-tab.active {
+  background: #edf7f6;
+  border: 1.5px solid #15803d;
+  box-shadow: 0 2px 8px rgba(21, 128, 61, 0.12);
+}
+
+/* Left side content inside card: Avatar + Info */
+.student-card-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Avatar Circle (e.g., "S1", "AT", etc.) */
+.student-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #1e293b;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.student-card-tab.active .student-avatar {
+  background: #15803d;
+}
+
+.student-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.student-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.student-subtext {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* --- BADGES ON RIGHT SIDE OF CARD --- */
+.badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.badge-HIGH_PERFORMER,
+.badge-STABLE_PROGRESS {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-MODERATE_RISK {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.badge-CRITICAL_RISK {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge-INSUFFICIENT_DATA {
+  background: #f1f5f9;
+  color: #64748b;
 }

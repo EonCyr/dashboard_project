@@ -205,8 +205,62 @@ useEffect(() => {
               <div className="empty-state" style={{ padding: '40px', textAlign: 'center', background: '#f9f9f9', borderRadius: '12px', border: '1px dashed #ddd' }}>
                 <p style={{ color: '#666', margin: 0 }}>No student data loaded. Please click the "Load Data" button to view progress.</p>
               </div>
-            ) : (
+            ) :
               role === 'therapist' ? (
+                /* 2. DATA IS LOADED & USER IS A THERAPIST */
+                selectedStudent ? (
+
+                  /* 2a. NEW LAYOUT (Shown when a student IS clicked) */
+                  <div className="master-detail-container">
+                    
+                    {/* Left Sidebar - Student Selection List */}
+                    <div className="student-list-sidebar">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <h3 style={{ margin: 0 }}>Students</h3>
+                        <button 
+                          type="button"
+                          className="pagination-btn" 
+                          onClick={() => setSelectedStudent(null)}
+                          style={{ fontSize: '0.8rem', padding: '4px 8px' }}
+                        >
+                          ← Back to Table
+                        </button>
+                      </div>
+
+                      {currentMetrics.map((item) => {
+                        const isSelected = selectedStudent?.id === item.id;
+                        
+                        return (
+                          <div
+                            key={item.id}
+                            className={`student-card-tab ${isSelected ? 'active' : ''}`}
+                            onClick={() => handleRowClick(item)}
+                          >
+                            <div className="tab-header">
+                              <strong>Student {item.id}</strong>
+                              <span className="band-badge">{item.value}</span>
+                            </div>
+                            <div className="tab-subtext">
+                              <span>Semester {item.semester}</span>
+                              <span>Score: {item.totalScore}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* this thing activates like the graph part that used to be the pop up indepth student report */}
+                    <div className="student-detail-main">
+                      <StudentModal 
+                        selectedStudent={selectedStudent} 
+                        onClose={() => setSelectedStudent(null)} 
+                      />
+                    </div>
+
+                  </div>
+
+                ) : (
+                  
                 <div className="table-responsive">
                   <table className="student-table">
                     <thead>
@@ -292,9 +346,10 @@ useEffect(() => {
                     </button>
                   </div>
                 </div>
+    )
               ) : (
                 <ParentModal metrics={metrics} username={username} />
-              )
+              
             )}
 
             {/* Comm Launcher Integration */}
@@ -316,6 +371,7 @@ useEffect(() => {
           </div>
 
           {/* ADAPTIVE SIDE PANEL */}
+          {!selectedStudent && (
           <aside className="side-panel">
             <div className="panel-header">
               <h3>{role === 'therapist' ? 'Therapist Tools' : 'Parent Resources'}</h3>
@@ -380,7 +436,7 @@ useEffect(() => {
               </div>
             )}
           </aside>
-
+          )}
         </div>
 
         {/* THERAPIST ADD ASSESSMENT MODAL */}
@@ -391,12 +447,6 @@ useEffect(() => {
           onSuccess={() => {
             loadData(role, username, setMetrics, setIsLoading, sortBy, sortOrder);
           }}
-        />
-
-        {/* IN-DEPTH STUDENT MODAL OVERLAY */}
-        <StudentModal 
-          selectedStudent={selectedStudent}
-          onClose={() => setSelectedStudent(null)}
         />
 
         {/* COMMUNICATION THREAD MODAL */}
