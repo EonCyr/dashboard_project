@@ -72,19 +72,6 @@ function App() {
   const [isRelationshipManagerOpen, setIsRelationshipManagerOpen] = useState(false);
   const [sortBy, setSortBy] = useState('none');
   const [sortOrder, setSortOrder] = useState('asc');
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Filter metrics based on search query
-  const filteredMetrics = searchQuery.trim() === ''
-    ? metrics
-    : metrics.filter((item) => {
-        const q = searchQuery.trim().toLowerCase();
-        const idMatch = String(item.id) === searchQuery.trim();
-        const bandMatch = (item.value || '').toLowerCase().includes(q);
-        const { statusLabel } = getRiskStatus(item, riskConfig);
-        const statusMatch = statusLabel.toLowerCase().includes(q);
-        return idMatch || bandMatch || statusMatch;
-      });
   
   // States for the student pop up
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -151,6 +138,19 @@ useEffect(() => {
   const handleRowClick = (student) => {
     setSelectedStudent(student);
   };
+
+  const [searchQuery, setSearchQuery] = useState('');
+  // Filter metrics based on search query
+  const filteredMetrics = searchQuery.trim() === ''
+    ? metrics
+    : metrics.filter((item) => {
+        const q = searchQuery.trim().toLowerCase();
+        const idMatch = String(item.id) === searchQuery.trim();
+        const bandMatch = (item.value || '').toLowerCase().includes(q);
+        const { statusLabel } = getRiskStatus(item, riskConfig);
+        const statusMatch = statusLabel.toLowerCase().includes(q);
+        return idMatch || bandMatch || statusMatch;
+      });
 
   // --- 1. LOGIN SCREEN ---
   if (!isLoggedIn) {
