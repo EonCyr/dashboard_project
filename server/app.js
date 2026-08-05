@@ -320,7 +320,67 @@ app.get('/student-history/:studentid', (req, res) => {
     });
 });
 
+app.get('/reports/parent-summary/:studentId', async (req, res) => {
+  const { studentId } = req.params;
 
+  const sql = `
+    SELECT scores, band, semester
+    FROM assessments
+    WHERE studentid = ?
+    ORDER BY semester DESC
+    LIMIT 1
+  `;
+
+  pool.query(sql, [studentId], async (err, rows) => {
+    if (err) {
+      console.error('Error fetching latest assessment for summary:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: 'No assessment data available yet.' });
+    }
+
+    let scores;
+    try {
+      scores = typeof rows[0].scores === 'string' ? JSON.parse(rows[0].scores) : rows[0].scores;
+    } catch (parseError) {
+      console.error('Error parsing scores for summary:', parseError);
+      return res.status(500).json({ error: 'Corrupted assessment data.' });
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 120,
+          messages: [{
+            role: 'user',
+            content: `In exactly 1 short sentence, plain ASCII text, no markdown, give a warm summary of this child's current literacy progress for a parent dashboard banner. Data: ${JSON.stringify(scores)}, overall band: ${rows[0].band}`,
+          }],
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      if (!response.ok) throw new Error(`AI API returned ${response.status}`);
+      const data = await response.json();
+      const summary = data.content.map((c) => c.text || '').join(' ').trim();
+
+      res.json({ summary, band: rows[0].band, semester: rows[0].semester });
+    } catch (aiError) {
+      console.error('Profile summary AI error:', aiError);
+      res.status(502).json({ error: 'Could not generate summary right now.' });
+    }
+  });
+});
 
 // Report generation feature (added) 
 

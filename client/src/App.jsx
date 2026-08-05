@@ -10,7 +10,7 @@ import CommunicationThread from './components/Communications.jsx'
 import MessageParentsModal from './components/MessageParentsModal.jsx'
 import { ParentModal } from './components/ParentModal';
 import AddAssessmentModal from './components/AddAssessmentModal.jsx';
-
+import ProfileSummaryCard from './components/ProfileSummaryCard.jsx';
 import AtRiskTable from './AtRiskTable.jsx';
 import RiskConfigModal from './RiskConfigModal.jsx';
 
@@ -257,6 +257,9 @@ useEffect(() => {
           
           {/* MAIN CONTENT AREA */}
           <div className="main-data-section">
+             {role === 'parent' && metrics.length > 0 && (
+              <ProfileSummaryCard studentId={metrics[0]?.id} studentName={metrics[0]?.name} />
+            )}
             {metrics.length === 0 ? (
               <div className="empty-state" style={{ padding: '40px', textAlign: 'center', background: '#f9f9f9', borderRadius: '12px', border: '1px dashed #ddd' }}>
                 <p style={{ color: '#666', margin: 0 }}>No student data loaded. Please click the "Load Data" button to view progress.</p>

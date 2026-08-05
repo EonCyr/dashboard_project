@@ -811,6 +811,81 @@ app.post('/communications', (req, res) => {
     });
   });
 });
+app.get('/reports/parent-summary/:studentId', async (req, res) => {
+  const { studentId } = req.params;
+
+  const sql = `
+    SELECT scores, band, semester
+    FROM assessments
+    WHERE studentid = ?
+    ORDER BY semester DESC
+    LIMIT 1
+  `;
+
+  pool.query(sql, [studentId], async (err, rows) => {
+    if (err) {
+      console.error('Error fetching summary data:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: 'No assessment data found' });
+    }
+
+    const row = rows[0];
+    const scores = typeof row.scores === 'string' ? JSON.parse(row.scores) : row.scores;
+
+    const parsedRow = {
+      semester: row.semester,
+      band: row.band,
+      vocab: formatScoreField(scores.vocab),
+      phonics: formatScoreField(scores['pa/phonics']),
+      writing: formatScoreField(scores.writing),
+      listening: formatScoreField(scores['listening/readingcomprehension']),
+    };
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 100,
+          messages: [{
+            role: 'user',
+            content: `Write a single encouraging sentence (max 20 words) summarising this child's latest literacy assessment for a parent. No markdown, no punctuation beyond a full stop.
+
+Data: ${JSON.stringify(parsedRow)}`
+          }],
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+
+      if (!response.ok) throw new Error(`AI API returned ${response.status}`);
+
+      const data = await response.json();
+      const summary = data.content.map((c) => c.text || '').join('').trim();
+
+      return res.status(200).json({ summary, band: row.band });
+    } catch (aiError) {
+      console.error('AI summary error:', aiError);
+      // Fall back to a plain summary if AI fails rather than erroring
+      return res.status(200).json({
+        summary: `Latest assessment: ${parsedRow.semester}, Overall Band ${row.band}.`,
+        band: row.band,
+      });
+    }
+  });
+});
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
