@@ -1,6 +1,9 @@
 jest.mock('mysql2', () => {
   const mockPool = {
-    query: jest.fn(),
+    query: jest.fn((sql, ...args) => {
+      const cb = args[args.length - 1];
+      if (typeof cb === 'function') cb(null, []); // default: succeed with empty results
+    }),
     promise: jest.fn(() => ({ query: jest.fn() })),
   };
   return { createPool: jest.fn(() => mockPool) };
@@ -154,4 +157,52 @@ describe('POST /reports/clinical', () => {
     );
     expect(res.headers['content-disposition']).toMatch(/clinical-report\.docx/);
   });
+
+});
+describe('POST /reports/parent — boundary & negative cases', () => {
+  const mockPool = mysql.createPool();
+
+  beforeEach(() => {
+  jest.resetAllMocks();
+  global.fetch = jest.fn();
+});
+
+test('treats an unrecognized format as a plain-text fallback (finding, not a crash)', async () => {
+  mockPool.query.mockImplementation((sql, params, callback) => {
+    callback(null, [{ scores: JSON.stringify({ vocab: { band: 'A' }, 'pa/phonics': { band: 'A' }, writing: { band: 'A' }, 'listening/readingcomprehension': { band: 'A' } }), band: 'A', semester: '2022 Sem 1' }]);
+  });
+  global.fetch.mockResolvedValue({ ok: true, json: async () => ({ content: [{ text: 'Summary' }] }) });
+
+  const res = await request(app).post('/reports/parent').send({
+    studentId: 1, semester: '2022 Sem 1', format: 'exe', username: 'parent1',
+  });
+  expect(res.status).toBe(200);
+  expect(res.headers['content-type']).toMatch(/text\/plain/);
+});
+
+test('handles a SQL-injection-shaped studentId safely', async () => {
+  mockPool.query.mockImplementation((sql, params, callback) => callback(null, []));
+  const res = await request(app).post('/reports/parent').send({
+    studentId: 'DROP TABLE students;', semester: '2022 Sem 1', format: 'txt', username: 'parent1',
+  });
+  expect(res.status).toBe(404); // parameterized query treats it as a literal string — safe
+});
+
+test('handles malformed JSON in scores column gracefully (after fix)', async () => {
+  mockPool.query.mockImplementation((sql, params, callback) => {
+    callback(null, [{ scores: '{not valid json', band: 'A', semester: '2022 Sem 1' }]);
+  });
+  const res = await request(app).post('/reports/parent').send({
+    studentId: 1, semester: '2022 Sem 1', format: 'txt', username: 'parent1',
+  });
+  expect(res.status).toBe(500);
+});
+
+test('handles studentId as an array (type confusion)', async () => {
+  mockPool.query.mockImplementation((sql, params, callback) => callback(null, []));
+  const res = await request(app).post('/reports/parent').send({
+    studentId: [1, 2], semester: '2022 Sem 1', format: 'txt', username: 'parent1',
+  });
+  expect(res.status).not.toBe(200);
+});
 });

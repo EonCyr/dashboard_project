@@ -38,3 +38,22 @@ describe('compileReport', () => {
     expect(buffer.slice(0, 4).toString()).toBe('%PDF'); // valid PDF files start with this
   });
 });
+describe('formatScoreField — boundary cases', () => {
+  test('handles an empty object', () => {
+    expect(formatScoreField({})).toBe('');
+  });
+
+  test('handles deeply nested object without crashing', () => {
+    const result = formatScoreField({ band: { nested: { deep: 'value' } } });
+    expect(typeof result).toBe('string');
+  });
+
+  test('handles numeric zero (falsy but valid) correctly', () => {
+    // 0 is falsy in JS — confirms whether this is treated as "missing" or a real value
+    expect(formatScoreField(0)).toBe('N/A');
+  });
+
+  test('handles array input without throwing', () => {
+    expect(() => formatScoreField(['A', 'B'])).not.toThrow();
+  });
+});
