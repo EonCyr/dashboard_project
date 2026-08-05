@@ -52,7 +52,7 @@ describe('ClinicalStudentSelector', () => {
 
   test('defaults selected student to the first in the list', () => {
     render(<ClinicalStudentSelector metrics={mockMetrics} username="therapist1" />);
-    const select = screen.getByRole('combobox');
+    const select = screen.getByRole('combobox', { name: /student/i });
     expect(select.value).toBe('1');
   });
 });
