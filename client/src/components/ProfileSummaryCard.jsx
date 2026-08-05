@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 function ProfileSummaryCard({ studentId, studentName }) {
   const [summary, setSummary] = useState(null);
   const [band, setBand] = useState(null);
-  const [status, setStatus] = useState('loading'); // loading | ready | error | nodata
+  const [status, setStatus] = useState('loading'); 
 
   useEffect(() => {
     if (!studentId) return;
@@ -85,22 +85,7 @@ function ProfileSummaryCard({ studentId, studentName }) {
         </div>
       </div>
 
-      {/* Right: band badge */}
-      {band && (
-        <div
-          style={{
-            flexShrink: 0,
-            padding: '6px 14px',
-            borderRadius: '999px',
-            background: '#e0e7ff',
-            color: '#2563eb',
-            fontWeight: 700,
-            fontSize: '0.9rem',
-          }}
-        >
-          {band}
-        </div>
-      )}
+      
     </div>
   );
 }
