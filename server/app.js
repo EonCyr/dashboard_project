@@ -332,12 +332,19 @@ setInterval(() => {
     if (entry.expiresAt < now) reportCache.delete(id);
   }
 }, 60 * 1000);
-
 function formatScoreField(field) {
   if (!field) return 'N/A';
   if (typeof field === 'object') {
     return Object.entries(field)
-      .map(([key, val]) => `${key.replace(/_/g, ' ')}: ${val}`)
+      .map(([key, val]) => {
+        let displayVal;
+        try {
+          displayVal = typeof val === 'object' && val !== null ? JSON.stringify(val) : String(val);
+        } catch {
+          displayVal = '[unprintable]';
+        }
+        return `${key.replace(/_/g, ' ')}: ${displayVal}`;
+      })
       .join(', ');
   }
   return field;
@@ -366,17 +373,23 @@ app.post('/reports/parent', async (req, res) => {
       return res.status(404).json({ error: 'No assessment data available for the selected semester.' });
     }
 
-    const parsedRows = rows.map((r) => {
-      const scores = typeof r.scores === 'string' ? JSON.parse(r.scores) : r.scores;
-      return {
-        semester: r.semester,
-        band: r.band,
-        vocab: formatScoreField(scores.vocab),
-        phonics: formatScoreField(scores['pa/phonics']),
-        writing: formatScoreField(scores.writing),
-        listening: formatScoreField(scores['listening/readingcomprehension']),
-      };
-    });
+  let parsedRows;
+try {
+  parsedRows = rows.map((r) => {
+    const scores = typeof r.scores === 'string' ? JSON.parse(r.scores) : r.scores;
+    return {
+      semester: r.semester,
+      band: r.band,
+      vocab: formatScoreField(scores.vocab),
+      phonics: formatScoreField(scores['pa/phonics']),
+      writing: formatScoreField(scores.writing),
+      listening: formatScoreField(scores['listening/readingcomprehension']),
+    };
+  });
+} catch (parseError) {
+  console.error('Error parsing assessment scores:', parseError);
+  return res.status(500).json({ error: 'Corrupted assessment data.' });
+}
 
     let summaryText;
     try {
@@ -439,17 +452,23 @@ app.post('/reports/clinical', async (req, res) => {
       return res.status(404).json({ error: 'No assessment data available for the selected semester.' });
     }
 
-    const parsedRows = rows.map((r) => {
-      const scores = typeof r.scores === 'string' ? JSON.parse(r.scores) : r.scores;
-      return {
-        semester: r.semester,
-        band: r.band,
-        vocab: formatScoreField(scores.vocab),
-        phonics: formatScoreField(scores['pa/phonics']),
-        writing: formatScoreField(scores.writing),
-        listening: formatScoreField(scores['listening/readingcomprehension']),
-      };
-    });
+    let parsedRows;
+    try {
+      parsedRows = rows.map((r) => {
+        const scores = typeof r.scores === 'string' ? JSON.parse(r.scores) : r.scores;
+        return {
+          semester: r.semester,
+          band: r.band,
+          vocab: formatScoreField(scores.vocab),
+          phonics: formatScoreField(scores['pa/phonics']),
+          writing: formatScoreField(scores.writing),
+          listening: formatScoreField(scores['listening/readingcomprehension']),
+        };
+      });
+    } catch (parseError) {
+      console.error('Error parsing assessment scores:', parseError);
+      return res.status(500).json({ error: 'Corrupted assessment data.' });
+    }
 
     let clinicalText;
     try {
