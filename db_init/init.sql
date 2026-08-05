@@ -98,6 +98,26 @@ CREATE TABLE IF NOT EXISTS communications (
 CREATE INDEX idx_comm_thread ON communications(studentid, parentid);
 
 
+-- hardcoded risk thresholds ignore first
+
+CREATE TABLE IF NOT EXISTS Risk_Threshold_Configurations (
+    Band VARCHAR(10) PRIMARY KEY,
+    Set_By_Teacher_ID INT NULL,
+    Critical_Score_Ceiling INT NOT NULL DEFAULT 20,
+    Moderate_Score_Ceiling INT NOT NULL DEFAULT 25,
+    High_Performer_Benchmark INT NOT NULL DEFAULT 28,
+    Baseline_Window_Months INT NOT NULL DEFAULT 2,
+    Stagnant_Months_Threshold INT NOT NULL DEFAULT 3,
+    Last_Updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT INTO Risk_Threshold_Configurations 
+(Band, Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months)
+VALUES 
+('A', 22, 26, 29, 2),
+('B', 20, 25, 28, 2),
+('C', 18, 22, 25, 2)
+ON DUPLICATE KEY UPDATE Band=VALUES(Band);
 
 -- Dummy data for testing with the new schema
 INSERT IGNORE INTO users (userid, username, password, email, phone_number, role) VALUES
@@ -159,21 +179,3 @@ INSERT IGNORE INTO parent_student (parentid, studentid, relationship) VALUES
 -- (6, 1, 3, '2023 Sem 1', 'centre1',
 --   '{"vocab":{"band":"C+","raw_score":58},"pa/phonics":{"band":"C","raw_score":54},"writing":{"band":"D+","raw_score":45},"listening/readingcomprehension":{"band":"C","raw_score":52}}',
 --   'C-');
-
--- hardcoded risk thresholds ignore first
-
-CREATE TABLE IF NOT EXISTS Risk_Threshold_Configurations (
-    Configuration_ID INT PRIMARY KEY AUTO_INCREMENT,
-    Set_By_Teacher_ID INT NULL,
-    Critical_Score_Ceiling INT NOT NULL DEFAULT 20,
-    Moderate_Score_Ceiling INT NOT NULL DEFAULT 25,
-    High_Performer_Benchmark INT NOT NULL DEFAULT 28,
-    Baseline_Window_Months INT NOT NULL DEFAULT 2,
-    Stagnant_Months_Threshold INT NOT NULL DEFAULT 3,
-    Last_Updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
-INSERT INTO Risk_Threshold_Configurations 
-(Configuration_ID, Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months)
-VALUES (1, 20, 25, 28, 2)
-ON DUPLICATE KEY UPDATE Configuration_ID=1;
