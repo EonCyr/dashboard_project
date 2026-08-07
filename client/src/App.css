@@ -19,7 +19,7 @@ body {
 }
 
 .dashboard {
-  max-width: 1120px;
+  max-width: 90%;
   margin: 0 auto;
   padding: 32px 24px 48px;
 }
@@ -44,6 +44,43 @@ body {
 h1 {
   margin: 0;
   font-size: 2rem;
+}
+
+select{
+  width: 100%;
+  padding: 8px 26px 8px 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1f2937;
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+}
+
+select option {
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #1f2937;
+  background-color: #ffffff;
+  padding: 8px 12px; 
+}
+
+select option:hover,
+select option:focus,
+select option:active,
+select option:checked {
+  background-color: #fee2e2 !important; /* Soft red tint matching your theme */
+  color: #dc2626 !important;
+}
+
+input{
+  padding: 10px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: border-color 0.3s;
 }
 
 .panel {
@@ -210,6 +247,74 @@ h1 {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px dashed #e5e7eb;
+
+}
+/*new gen report css*/
+.report-download {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.report-download h3 {
+  margin: 0 0 4px 0;
+  color: #dc2626;
+  font-size: 1.1rem;
+}
+.clinical-subtitle {
+  margin: 0 0 12px 0;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+.report-download label,
+.section-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+/* flexbox row for side-by-side layout */
+.input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.custom-input {
+  flex: 1; /* Takes up remaining space */
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  outline: none;
+}
+
+.format-select {
+  width: 85px; /* Compact width for PDF/DOCX dropdown */
+  padding: 8px;
+  font-size: 0.85rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  outline: none;
+  background-color: #f9fafb;
+}
+
+.download-action-btn {
+  width: 100%;
+  padding: 10px;
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.download-action-btn:hover {
+  background-color: #b91c1c;
 }
 
 /* Notice box for parents */

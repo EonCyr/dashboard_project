@@ -1,5 +1,26 @@
 import { useState } from 'react';
+export function ClinicalStudentSelector({ metrics, username }) {
+  const [selectedId, setSelectedId] = useState(metrics[0]?.id || '');
 
+  return (
+    <div className="report-download">
+      <h3>Generate Clinical Progress Report</h3>
+      <p className="clinical-subtitle">Select student details and export format</p>
+
+      <label>
+        Select Student:
+        <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
+          {metrics.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name || m.id}
+            </option>
+          ))}
+        </select>
+      </label>
+      <ClinicalReportDownload studentId={selectedId} username={username} />
+    </div>
+  );
+}
 function ClinicalReportDownload({ studentId, username }) {
   const [semester, setSemester] = useState('');
   const [format, setFormat] = useState('pdf');
@@ -56,26 +77,26 @@ function ClinicalReportDownload({ studentId, username }) {
   };
 
   return (
-    <div className="report-download">
-      <h3>Generate Clinical Progress Report</h3>
-
+    <>
       <div className="report-controls">
-        <label>
-          Semester
-          <input
+        <label>Select Semester & Format:
+        <div className="input-row">
+          <input className="custom-input"
             type="text"
             placeholder="2022 Sem 1"
             value={semester}
             onChange={(e) => setSemester(e.target.value)}
           />
-        </label>
-        <select value={format} onChange={(e) => setFormat(e.target.value)}>
+        <select className="format-select" value={format} onChange={(e) => setFormat(e.target.value)}>
           <option value="pdf">PDF</option>
           <option value="docx">DOCX</option>
         </select>
-        <button onClick={handleDownload} disabled={status === 'loading'}>
+        </div>
+
+        <button className="download-action-btn" onClick={handleDownload} disabled={status === 'loading'}>
           {status === 'loading' ? 'Generating...' : 'Download Report'}
         </button>
+        </label>
       </div>
 
       {errorMsg && (
@@ -86,28 +107,10 @@ function ClinicalReportDownload({ studentId, username }) {
           )}
         </p>
       )}
-    </div>
+    </>
   );
 }
 
-export function ClinicalStudentSelector({ metrics, username }) {
-  const [selectedId, setSelectedId] = useState(metrics[0]?.id || '');
 
-  return (
-    <div>
-      <label>
-        Student:
-        <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
-          {metrics.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name || m.id}
-            </option>
-          ))}
-        </select>
-      </label>
-      <ClinicalReportDownload studentId={selectedId} username={username} />
-    </div>
-  );
-}
 
 export default ClinicalReportDownload;

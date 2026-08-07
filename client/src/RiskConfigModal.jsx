@@ -99,7 +99,7 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
     <div className="modal-overlay">
       <div className="modal-card" style={{ maxWidth: '500px' }}>
         <h2>UC9: Configure Risk Assessment Metrics</h2>
-        
+        <button className="close-btn" onClick={onClose}>&times;</button>
         {/* Band Switcher Tabs */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
           {['A', 'B', 'C'].map((band) => (

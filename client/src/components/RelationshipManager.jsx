@@ -95,6 +95,7 @@ const handleClose = () => {
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-split-container">
           <h3>Parent-Student Relationship Manager</h3>
+          <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
 
         <div style={{ display: 'grid', gap: '0.6rem', marginBottom: '0.75rem' }}>
