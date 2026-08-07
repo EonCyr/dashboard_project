@@ -135,7 +135,7 @@
 
 .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; }
 .tab-navigation { display: flex; margin-bottom: 16px; border-bottom: 2px solid #eee; }
-.tab-btn { flex: 1; padding: 10px; background: none; border: none; cursor: pointer; font-weight: 500; }
+.tab-btn { border-radius: 0; flex: 1; padding: 10px; background: none; border: none; cursor: pointer; font-weight: 500; }
 .tab-btn.active { border-bottom: 2px solid #d9534f; color: #d9534f; }
 .form-group { margin-bottom: 12px; display: flex; flex-direction: column; }
 .form-row { display: flex; gap: 10px; margin-bottom: 12px; }

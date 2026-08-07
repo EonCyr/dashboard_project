@@ -169,7 +169,7 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
           </div>
 
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-            <button type="button" className="modal-close-btn" onClick={onClose} style={{ background: '#6c757d' }}>
+            <button type="button" className="modal-close-btn" onClick={onClose} >
               Cancel
             </button>
             <button type="submit" disabled={isSubmitting} >
