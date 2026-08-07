@@ -93,7 +93,7 @@ const handleClose = () => {
   return (
     <div className="modal-overlay" onClick={handleClose} role="dialog" aria-modal="true">
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-split-container">
+        <div className="modal-header">
           <h3>Parent-Student Relationship Manager</h3>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>

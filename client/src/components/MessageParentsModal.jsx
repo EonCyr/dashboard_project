@@ -50,6 +50,7 @@ function MessageParentsModal({ username, onClose }) {
           <h3>Message Parents</h3>
           <button onClick={onClose}>Close</button>
         </header>
+        
 
         <div className="message-mode-toggle">
           <button onClick={() => setIsBroadcasting(false)} disabled={!isBroadcasting}>

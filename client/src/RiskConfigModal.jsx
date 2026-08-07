@@ -98,25 +98,19 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
   return (
     <div className="modal-overlay">
       <div className="modal-card" style={{ maxWidth: '500px' }}>
-        <h2>UC9: Configure Risk Assessment Metrics</h2>
-        <button className="close-btn" onClick={onClose}>&times;</button>
-        {/* Band Switcher Tabs */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <div className="modal-header">
+          <h3>Configure Risk Assessment Metrics</h3>
+          <button className="close-btn" onClick={onClose}>&times;</button>
+        </div>
+        
+        <div className="band-tab-container" >
           {['A', 'B', 'C'].map((band) => (
             <button
               key={band}
               type="button"
+              className={`band-tab-btn ${selectedBand === band ? 'active' : ''}`}
               onClick={() => setSelectedBand(band)}
-              style={{
-                flex: 1,
-                padding: '8px',
-                borderRadius: '4px',
-                border: '1px solid #007bff',
-                background: selectedBand === band ? '#007bff' : '#fff',
-                color: selectedBand === band ? '#fff' : '#007bff',
-                fontWeight: 'bold',
-                cursor: 'pointer'
-              }}
+            
             >
               Band {band}
             </button>
@@ -178,7 +172,7 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
             <button type="button" className="modal-close-btn" onClick={onClose} style={{ background: '#6c757d' }}>
               Cancel
             </button>
-            <button type="submit" disabled={isSubmitting} style={{ background: '#1e3a8a', color: '#fff', padding: '8px 16px', borderRadius: '4px' }}>
+            <button type="submit" disabled={isSubmitting} >
               {isSubmitting ? 'Saving...' : `Save Band ${selectedBand}`}
             </button>
           </div>

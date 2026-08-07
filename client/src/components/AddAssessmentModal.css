@@ -141,7 +141,5 @@
 .form-row { display: flex; gap: 10px; margin-bottom: 12px; }
 .form-row input, .form-group input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
 .upload-zone { border: 2px dashed #ccc; padding: 20px; text-align: center; margin-bottom: 16px; border-radius: 4px; }
-.submit-btn { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-.submit-btn:disabled { background: #ccc; }
 .modal-message { margin-bottom: 12px; padding: 8px; background: #e2f0d9; color: #385723; border-radius: 4px; text-align: center; font-size: 14px; }
 
