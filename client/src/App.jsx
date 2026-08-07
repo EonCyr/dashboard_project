@@ -347,23 +347,6 @@ useEffect(() => {
                 <ParentModal metrics={metrics} username={username} />
               )
             )}
-
-            {/* Comm Launcher Integration */}
-            {metrics.length > 0 && (
-              <div className="comm-launcher" style={{ marginTop: '20px' }}>
-                <h3>Home & Progress Notes</h3>
-                <ul>
-                  {[...new Map(metrics.map((m) => [m.studentId, m])).values()].map((student) => (
-                    <li key={student.studentId}>
-                      {student.name}{' '}
-                      <button onClick={() => setActiveThread({ studentId: student.studentId, parentId: student.parentId, studentName: student.name })}>
-                        Open thread
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
 
           {/* ADAPTIVE SIDE PANEL */}

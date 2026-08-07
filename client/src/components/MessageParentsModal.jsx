@@ -15,6 +15,13 @@ function MessageParentsModal({ username, onClose }) {
       .catch((err) => console.error('Failed to load relationships:', err));
   }, [username]);
 
+  const formatParentLabel = (parentName) => {
+    if (!parentName) return 'No parent linked';
+    return parentName
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
   const handleBroadcast = async () => {
     if (!broadcastText.trim()) return;
     setBroadcastStatus('Sending...');
@@ -62,26 +69,30 @@ function MessageParentsModal({ username, onClose }) {
         </div>
 
         {!isBroadcasting && (
-          <ul>
-            {relationships.map((rel) => (
-              <li key={`${rel.studentid}-${rel.parentid}`}>
-                {rel.student_name} — {rel.parent_name || 'No parent linked'}{' '}
-                {rel.parentid && (
-                  <button
-                    onClick={() =>
-                      setActiveThread({
-                        studentId: rel.studentid,
-                        parentId: rel.parentid,
-                        studentName: rel.student_name
-                      })
-                    }
-                  >
-                    Open thread
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
+          <div className="parent-list">
+            {relationships.map((rel) => {
+              const parentLabel = formatParentLabel(rel.parent_name);
+              return (
+                <div key={`${rel.studentid}-${rel.parentid}`} className="parent-row">
+                  <span className="parent-name">{parentLabel}</span>
+                  {rel.parentid && (
+                    <button
+                      className="open-thread-btn"
+                      onClick={() =>
+                        setActiveThread({
+                          studentId: rel.studentid,
+                          parentId: rel.parentid,
+                          studentName: parentLabel
+                        })
+                      }
+                    >
+                      Open thread
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
 
         {isBroadcasting && (

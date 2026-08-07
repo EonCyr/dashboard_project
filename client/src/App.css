@@ -873,6 +873,44 @@ css
   cursor: default;
 }
 
+.parent-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.parent-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.parent-row:last-child {
+  border-bottom: none;
+}
+
+.parent-name {
+  color: #162033;
+  font-size: 0.95rem;
+}
+
+.open-thread-btn {
+  padding: 6px 14px;
+  border: 1px solid #d1d5db;
+  background-color: #f3f4f6;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.open-thread-btn:hover {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+}
+
 .broadcast-form {
   display: flex;
   flex-direction: column;
