@@ -124,9 +124,10 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontWeight: 'bold' }}>Critical Risk Ceiling (&lt;)</label>
+          <div style={{ marginBottom: '12px' }}> {/*htmlfor and the id is needed to link, edited after testing*/}
+            <label htmlFor="critical-score" style={{ display: 'block', fontWeight: 'bold' }}>Critical Risk Ceiling (&lt;)</label>
             <input 
+              id="critical-score"
               type="number" 
               value={currentConfig.criticalScore} 
               onChange={(e) => handleInputChange('criticalScore', e.target.value)}
@@ -136,8 +137,9 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
           </div>
 
           <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontWeight: 'bold' }}>Moderate / At-Risk Ceiling (&lt;)</label>
+            <label htmlFor="moderate-score" style={{ display: 'block', fontWeight: 'bold' }}>Moderate / At-Risk Ceiling (&lt;)</label>
             <input 
+              id="moderate-score" 
               type="number" 
               value={currentConfig.moderateScore} 
               onChange={(e) => handleInputChange('moderateScore', e.target.value)}
@@ -147,8 +149,9 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
           </div>
 
           <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', fontWeight: 'bold' }}>High Performer Benchmark (&ge;)</label>
+            <label htmlFor="high-score" style={{ display: 'block', fontWeight: 'bold' }}>High Performer Benchmark (&ge;)</label>
             <input 
+              id="high-score"
               type="number" 
               value={currentConfig.highPerformerScore} 
               onChange={(e) => handleInputChange('highPerformerScore', e.target.value)}
@@ -158,8 +161,9 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
           </div>
 
           <div style={{ marginBottom: '18px' }}>
-            <label style={{ display: 'block', fontWeight: 'bold' }}>Baseline Required Assessments</label>
+            <label htmlFor="baseline-window" style={{ display: 'block', fontWeight: 'bold' }}>Baseline Required Assessments</label>
             <input 
+              id="baseline-window"
               type="number" 
               value={currentConfig.baselineWindow} 
               onChange={(e) => handleInputChange('baselineWindow', e.target.value)}

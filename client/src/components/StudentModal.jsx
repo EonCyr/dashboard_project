@@ -47,12 +47,11 @@ export function StudentModal({ selectedStudent, onClose }) {
       <div className="modal-card">
         <div className="modal-header">
           <h2>Student ID: {selectedStudent.id} In-Depth Report</h2>
+            <button className="close-btn" onClick={onClose}>&times;</button>
+        </div>
         <p className="modal-subtitle">
           Overall Band: <strong>{activeSemesterData.band}</strong> | Weighted Score: <strong>{activeSemesterData.totalScore}</strong>
         </p>
-        
-          <button className="close-btn" onClick={onClose}>&times;</button>
-        </div>
 
         {/* CLICKABLE SEMESTER TABS */}
         <div className="semester-tabs-container">
