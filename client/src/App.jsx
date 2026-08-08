@@ -14,6 +14,7 @@ import ProfileSummaryCard from './components/ProfileSummaryCard.jsx';
 import AtRiskTable from './AtRiskTable.jsx';
 import RiskConfigModal from './RiskConfigModal.jsx';
 import { getRiskStatus } from './utils/risk';
+import TherapistSummaryCard from './components/TherapistSummaryCard.jsx';
 
 const initialMetrics = [
   { title: 'Metric 1', value: 'A', detail: 'On track' },
@@ -182,6 +183,14 @@ useEffect(() => {
       </header>
 
       <section className="panel">
+         {role === "therapist" ? (<TherapistSummaryCard 
+          therapistName={username} 
+          assignedStudentsCount={metrics.length}
+          maxCapacity={15}
+          atRiskCount={metrics.filter(item => getRiskStatus(item, riskConfig).statusTag.includes('RISK')).length}
+        />
+        ) : null}
+
         <h2>Student Metrics</h2>
         {data && <p>API Response: {data}</p>}
       

@@ -1037,3 +1037,84 @@ css
   border-color: #d9534f;
   font-weight: bold;
 }
+
+/* Therapist Summary Card Container */
+.therapist-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  margin-bottom: 16px;
+}
+
+/* Avatar Circle */
+.therapist-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #2563eb; /* Primary theme blue */
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Text Content */
+.therapist-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.therapist-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.therapist-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.therapist-role-badge {
+  font-size: 11px;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* Stats Row Below Name */
+.therapist-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.at-risk-stat strong {
+  color: #dc2626; /* Red for at-risk count */
+}
+
+.dot-separator {
+  color: #9ca3af;
+  font-size: 10px;
+}
+
+.status-online {
+  color: #16a34a;
+  font-weight: 600;
+}
