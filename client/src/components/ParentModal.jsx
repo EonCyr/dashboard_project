@@ -51,7 +51,9 @@ export function ParentModal({ metrics, username }) {
           setParentSelectedSemester(initialStudent.semester);
         }
       } catch (err) {
-        console.error('Failed to load student history for parent portal', err);
+        if (process.env.NODE_ENV !== 'test') {
+          console.error('Failed to load student history for parent portal', err);
+        }
         setStudentHistory([initialStudent]);
         setActiveSemesterData(initialStudent);
       } finally {

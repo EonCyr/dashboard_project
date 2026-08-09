@@ -1,3 +1,4 @@
+/* --- Global Reset & Variables --- */
 :root {
   color: #162033;
   background-color: #f4f7fb;
@@ -18,35 +19,16 @@ body {
   min-height: 100vh;
 }
 
-.dashboard {
-  max-width: 90%;
-  margin: 0 auto;
-  padding: 32px 24px 48px;
+/* --- Global Form Elements --- */
+input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: border-color 0.3s;
 }
 
-.dashboard.tutor { border-top: 5px solid #2563eb; } /* Blue for Tutors */
-.dashboard.parent { border-top: 5px solid #16a34a; } /* Green for Parents */
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  gap: 16px;
-  color: #E91626;
-}
-
-.parent-detailed-view { 
-  display: grid; 
-  grid-template-columns: 1fr 1fr; 
-}
-
-h1 {
-  margin: 0;
-  font-size: 2rem;
-}
-
-select{
+select {
   width: 100%;
   padding: 8px 26px 8px 10px;
   font-size: 0.9rem;
@@ -64,25 +46,67 @@ select option {
   font-family: inherit;
   color: #1f2937;
   background-color: #ffffff;
-  padding: 8px 12px; 
+  padding: 8px 12px;
 }
 
-input{
-  padding: 10px 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  transition: border-color 0.3s;
+button {
+  color: black;
+  border: 1px solid #dce7ff;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
 }
-button{
-    color: black;
-    border: 1px solid #dce7ff;
-    border-radius: 8px;
-    padding: 10px 20px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background 0.3s ease;
+
+/* --- Dashboard Main Layout --- */
+.dashboard {
+  max-width: 90%;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
 }
+
+.dashboard.tutor { 
+  border-top: 5px solid #2563eb; 
+}
+
+.dashboard.parent { 
+  border-top: 5px solid #16a34a; 
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+  color: #E91626;
+}
+
+.dashboard-content-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  align-items: start;
+  gap: 24px;
+}
+
+.main-data-section {
+  min-width: 0;
+}
+
+.content-row {
+  display: flex;
+  gap: 24px;
+  margin-top: 24px;
+  align-items: stretch;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+/* --- Dashboard Components & Cards --- */
 .panel {
   background: white;
   border: 1px solid #e3e8f0;
@@ -95,17 +119,6 @@ button{
   margin-top: 0;
   margin-bottom: 8px;
   color: #E91626;
-}
-
-.load-button {
-  background: linear-gradient(135deg, #f9fbff 0%, #f2f6ff 100%);
-  color: black;
-  border: 1px solid #dce7ff;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.3s ease;
 }
 
 .card-grid {
@@ -123,13 +136,6 @@ button{
   min-height: 140px;
 }
 
-.card-label {
-  margin: 0 0 10px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #E91626;
-}
-
 .data-card h3 {
   margin: 0 0 8px;
   font-size: 1.6rem;
@@ -140,11 +146,11 @@ button{
   font-size: 0.95rem;
 }
 
-.content-row {
-  display: flex;
-  gap: 24px;
-  margin-top: 24px;
-  align-items: stretch;
+.card-label {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #E91626;
 }
 
 .chart-wrapper {
@@ -156,20 +162,18 @@ button{
   background: linear-gradient(135deg, #f9fbff 0%, #f2f6ff 100%);
 }
 
-/* --- Adaptive Dashboard Layout Wrapper --- */
-.dashboard-content-layout {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  align-items: start;
-  gap: 24px;
+.load-button {
+  background: linear-gradient(135deg, #f9fbff 0%, #f2f6ff 100%);
+  color: black;
+  border: 1px solid #dce7ff;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
 }
 
-
-.main-data-section {
-  min-width: 0;
-}
-
-/* --- Side Panel Styles --- */
+/* --- Side Panel & Sub-modules --- */
 .side-panel {
   background: #ffffff;
   border: 1px solid #e5e7eb;
@@ -195,7 +199,6 @@ button{
   color: #51607a;
 }
 
-/* Button Group layout */
 .tool-button-group {
   display: flex;
   flex-direction: column;
@@ -205,7 +208,6 @@ button{
   margin: 0;
 }
 
-/* Uniform Action Buttons */
 .panel-action-btn {
   width: 100%;
   padding: 10px 14px;
@@ -236,14 +238,13 @@ button{
   background-color: #dc2626;
 }
 
-/* Sub-modules */
 .panel-sub-module {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px dashed #e5e7eb;
-
 }
-/*new gen report css*/
+
+/* --- Report Generation --- */
 .report-download {
   display: flex;
   flex-direction: column;
@@ -255,11 +256,13 @@ button{
   color: #dc2626;
   font-size: 1.1rem;
 }
+
 .clinical-subtitle {
   margin: 0 0 12px 0;
   color: #6b7280;
   font-size: 0.85rem;
 }
+
 .report-download label,
 .section-label {
   display: block;
@@ -269,7 +272,6 @@ button{
   margin-bottom: 6px;
 }
 
-/* flexbox row for side-by-side layout */
 .input-row {
   display: flex;
   gap: 8px;
@@ -278,7 +280,7 @@ button{
 }
 
 .custom-input {
-  flex: 1; /* Takes up remaining space */
+  flex: 1;
   padding: 8px 12px;
   font-size: 0.85rem;
   border: 1px solid #d1d5db;
@@ -287,7 +289,7 @@ button{
 }
 
 .format-select {
-  width: 85px; /* Compact width for PDF/DOCX dropdown */
+  width: 85px;
   padding: 8px;
   font-size: 0.85rem;
   border: 1px solid #d1d5db;
@@ -311,7 +313,6 @@ button{
   background-color: #b91c1c;
 }
 
-/* Notice box for parents */
 .info-card-notice {
   background-color: #fef2f2;
   border: 1px solid #fecaca;
@@ -322,7 +323,7 @@ button{
   margin-bottom: 12px;
 }
 
-/* --- Login Screen Styles --- */
+/* --- Login Screen --- */
 .login-container {
   display: flex;
   justify-content: center;
@@ -360,12 +361,12 @@ button{
 }
 
 .login-card input:focus {
-  border-color: #007bff;
+  border-color: #dc2626;
   outline: none;
 }
 
 .login-card button {
-  background-color: #007bff;
+  background-color: #dc2626;
   color: white;
   border: none;
   padding: 12px;
@@ -376,10 +377,10 @@ button{
 }
 
 .login-card button:hover {
-  background-color: #0056b3;
+  background-color: #991b1b;
 }
 
-/* --- Therapist Table & Layout Styles --- */
+/* --- Student Table --- */
 .table-responsive {
   overflow-x: auto;
   margin-top: 1rem;
@@ -447,7 +448,123 @@ button{
   font-size: 0.75rem;
 }
 
-/* --- Pagination Styles --- */
+/* --- Search & Sorting Controls --- */
+.sorting-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 2%;
+  box-sizing: border-box;
+}
+
+.search-input-wrapper {
+  flex: 1;
+  display: flex;
+}
+
+.search-input-wrapper input {
+  width: 100%;
+}
+
+.search-input-expanding {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: none;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.sort-group {
+  display: flex;
+  align-items: center;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 2px 4px 2px 10px;
+  height: 40px;
+  box-sizing: border-box;
+  margin-left: auto;
+}
+
+.sort-pill-container {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 4px 6px 4px 12px;
+  height: 40px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+  gap: 8px;
+}
+
+.sort-pill-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-right: 6px;
+}
+
+.sort-pill-select,
+.sort-field-select {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+  outline: none;
+  padding-right: 8px;
+}
+
+.sort-direction-btn {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.sort-direction-btn:hover {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.sort-direction-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 4px;
+}
+
+.sort-direction-toggle:hover {
+  background-color: #7a0d0d;
+  color: #ffffff;
+}
+
+/* --- Pagination --- */
 .pagination-container {
   display: flex;
   justify-content: center;
@@ -475,8 +592,9 @@ button{
   font-weight: bold;
 }
 
-/* --- Modal Overlay & Card Styles --- */
-.modal-overlay {
+/* --- Modals & Overlays --- */
+.modal-overlay,
+.comm-overlay {
   position: fixed;
   inset: 0;
   width: 100vw;
@@ -493,11 +611,11 @@ button{
   background: #fff;
   padding: 2rem;
   border-radius: 8px;
-  width: 950px !important;
-  max-width: 95% !important;
+  width: 950px;
+  max-width: 95%;
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
   position: relative;
-  max-height: 90vh;
+  height: 70%;
   overflow-y: auto;
 }
 
@@ -514,7 +632,12 @@ button{
   gap: 0.75rem;
 }
 
-/* Modal Header & Close Button Alignment */
+.modal-right-column {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -527,70 +650,6 @@ button{
   font-size: 1.2rem;
   font-weight: 700;
   color: #1f2937;
-}
-
-
-/* Band Switcher Container */
-.band-tab-container {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-  background-color: #f3f4f6;
-  padding: 4px;
-  border-radius: 8px;
-}
-
-/* Band Tab Buttons */
-.band-tab-btn {
-  flex: 1;
-  padding: 8px 16px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #4b5563;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.band-tab-btn:hover {
-  color: #1f2937;
-}
-
-/* Active Tab Highlight */
-.band-tab-btn.active {
-  background-color: #ffffff;
-  color: #dc2626; /* Theme red */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.chart-row {
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  justify-content: space-evenly;
-}
-
-.chart-panel {
-  background: #f9f9f9;
-  padding: 15px;
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.chart-panel h4 {
-  margin: 0;
-  color: #1e3a8a;
-}
-
-.modal-right-column {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
 }
 
 .modal-subtitle {
@@ -625,6 +684,14 @@ button{
   float: right;
 }
 
+.modal-close-x {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  color: #64748b;
+  cursor: pointer;
+}
+
 .modal-score-row {
   display: flex;
   justify-content: space-between;
@@ -647,8 +714,63 @@ button{
   color: #111827;
 }
 
-/* --- Semester Tabs --- */
-.semester-tabs-container {
+/* --- Band Tabs & Charts --- */
+.band-tab-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  background-color: #f3f4f6;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.band-tab-btn {
+  flex: 1;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4b5563;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.band-tab-btn:hover {
+  color: #1f2937;
+}
+
+.band-tab-btn.active {
+  background-color: #ffffff;
+  color: #dc2626;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.chart-row {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  justify-content: space-evenly;
+}
+
+.chart-panel {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chart-panel h4 {
+  margin: 0;
+  color: #1e3a8a;
+}
+
+.semester-tabs-container,
+.semester-tabs {
   display: flex;
   gap: 8px;
   margin: 12px 0 20px 0;
@@ -672,26 +794,12 @@ button{
 }
 
 .semester-tab-btn.active {
-  background-color: #2563eb;
+  background-color: #dc2626;
   color: #ffffff;
-  border-color: #2563eb;
+  border-color: #dc2626;
 }
 
-css
-/* --- Communications / Message Thread Styles --- */
-.comm-overlay {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(15, 23, 42, 0.55);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
+/* --- Communications & Messaging --- */
 .comm-panel {
   background: #fff;
   padding: 2rem;
@@ -700,7 +808,8 @@ css
   max-width: 95%;
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
   max-height: 85vh;
-  overflow-y: auto;
+  overflow: hidden;
+  position: relative !important;
 }
 
 .comm-header {
@@ -728,30 +837,52 @@ css
   font-weight: bold;
 }
 
-.comm-thread {
+.comm-thread-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-height: 320px;
+  height: 100%;
+  min-height: 400px;
+}
+
+.comm-thread {
+  flex: 1;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 160px;
+  max-height: 65%;
   overflow-y: auto;
   margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comm-empty {
+  color: #94a3b8;
+  font-size: 13px;
+  margin: auto;
+  text-align: center;
 }
 
 .comm-message {
   border-radius: 8px;
   padding: 10px 14px;
-  background: linear-gradient(135deg, #f9fbff 0%, #f2f6ff 100%);
-  border: 1px solid #dce7ff;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
 }
 
 .comm-message.parent {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
+  background: #f1f6ff;
+  border-color: #2864e7;
+  border-left: 4px solid #2563eb;
 }
 
 .comm-message.therapist {
   background: #fef2f2;
   border-color: #fecaca;
+  border-left: 4px solid #ef4444;
 }
 
 .comm-meta {
@@ -760,9 +891,11 @@ css
   margin: 0 0 4px;
 }
 
+.comm-body-text,
 .comm-message p:last-child {
   margin: 0;
   color: #162033;
+  font-size: 13px;
 }
 
 .comm-form {
@@ -772,18 +905,21 @@ css
 }
 
 .comm-form textarea {
+  width: 100%;
+  min-height: 70px;
+  padding: 10px 12px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
-  padding: 10px 12px;
   font-family: inherit;
   font-size: 0.9rem;
   resize: vertical;
-  min-height: 70px;
+  outline: none;
+  box-sizing: border-box;
 }
 
 .comm-form textarea:focus {
   border-color: #E91626;
-  outline: none;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
 }
 
 .comm-form button {
@@ -795,6 +931,7 @@ css
   border-radius: 6px;
   font-weight: bold;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
 .comm-form button:hover {
@@ -851,6 +988,32 @@ css
   border-color: #9ca3af;
 }
 
+.chat-thread-container {
+  position: absolute !important;
+  inset: 0;
+  background: white;
+  z-index: 10;
+}
+
+.chat-thread-wrapper > div {
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.chat-thread-wrapper .close-btn,
+.chat-thread-wrapper button:contains("Close") {
+  display: none !important;
+}
+
+.thread-title-heading {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+
 .message-mode-toggle {
   display: flex;
   gap: 8px;
@@ -869,9 +1032,9 @@ css
 }
 
 .message-mode-toggle button:disabled {
-  background-color: #2563eb;
+  background-color: #dc2626;
   color: #fff;
-  border-color: #2563eb;
+  border-color: #dc2626;
   cursor: default;
 }
 
@@ -913,6 +1076,22 @@ css
   border-color: #9ca3af;
 }
 
+.back-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #dc2626;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.back-btn:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+
 .broadcast-form {
   display: flex;
   flex-direction: column;
@@ -938,7 +1117,133 @@ css
   cursor: pointer;
 }
 
-/* Risk Status Badge Styles */
+/* --- Compact Communication Variant --- */
+.compact-comm-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.compact-title {
+  font-size: 15px;
+  color: #1e293b;
+  font-weight: 500;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.compact-history-box {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  max-height: 220px;
+  min-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compact-empty-text {
+  margin: auto;
+  color: #94a3b8;
+  font-size: 13px;
+  text-align: center;
+}
+
+.compact-msg-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.compact-msg-card.therapist {
+  border-left: 3px solid #dc2626;
+}
+
+.compact-msg-card.parent {
+  border-left: 3px solid #dc2626;
+}
+
+.compact-msg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.author-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.time-tag {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.compact-msg-body {
+  margin: 0;
+  font-size: 13px;
+  color: #0f172a;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.compact-input-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compact-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.compact-textarea:focus {
+  border-color: #dc2626;
+}
+
+.compact-form-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.compact-submit-btn {
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.compact-submit-btn:hover {
+  background-color: #b91c1c;
+}
+
+.compact-error-text {
+  color: #dc2626;
+  font-size: 12px;
+  margin: 0;
+}
+
+/* --- Risk Status Badges --- */
 .badge {
   padding: 5px 12px;
   border-radius: 14px;
@@ -948,42 +1253,37 @@ css
   white-space: nowrap;
 }
 
-/* 🔴 Dark Red */
 .badge-CRITICAL_RISK {
   background-color: #ffebee;
   color: #b71c1c;
   border: 1px solid #ffcdd2;
 }
 
-/* 🟠 Orange */
 .badge-MODERATE_RISK {
   background-color: #fff3e0;
   color: #e65100;
   border: 1px solid #ffe0b2;
 }
 
-/* 🟡 Yellow / Gray */
 .badge-INSUFFICIENT_DATA {
   background-color: #fffde7;
   color: #f57f17;
   border: 1px solid #fff9c4;
 }
 
-/* 🟢 Green */
 .badge-STABLE_PROGRESS {
   background-color: #e8f5e9;
   color: #1b5e20;
   border: 1px solid #c8e6c9;
 }
 
-/* 🔵 Blue */
 .badge-HIGH_PERFORMER {
   background-color: #e3f2fd;
   color: #0d47a1;
   border: 1px solid #bbdefb;
 }
 
-/* Parent Portal In-Line Styles */
+/* --- Parent Portal Layout --- */
 .parent-portal-container {
   display: flex;
   flex-direction: column;
@@ -1015,30 +1315,7 @@ css
   font-size: 14px;
 }
 
-.semester-tabs {
-  display: flex;
-  gap: 8px;
-}
-
-.semester-tab-btn {
-  padding: 6px 14px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-  background: #f8f9fa;
-  color: #333333;
-  cursor: pointer;
-  font-weight: normal;
-  transition: all 0.2s ease;
-}
-
-.semester-tab-btn.active {
-  background: #d9534f;
-  color: #ffffff;
-  border-color: #d9534f;
-  font-weight: bold;
-}
-
-/* Therapist Summary Card Container */
+/* --- Therapist Summary Card --- */
 .therapist-summary-card {
   display: flex;
   align-items: center;
@@ -1051,12 +1328,11 @@ css
   margin-bottom: 16px;
 }
 
-/* Avatar Circle */
 .therapist-avatar {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background-color: #2563eb; /* Primary theme blue */
+  background-color: #2563eb;
   color: #ffffff;
   font-weight: 700;
   font-size: 18px;
@@ -1066,7 +1342,6 @@ css
   flex-shrink: 0;
 }
 
-/* Text Content */
 .therapist-info {
   display: flex;
   flex-direction: column;
@@ -1096,7 +1371,6 @@ css
   font-weight: 600;
 }
 
-/* Stats Row Below Name */
 .therapist-stats-row {
   display: flex;
   align-items: center;
@@ -1106,7 +1380,7 @@ css
 }
 
 .at-risk-stat strong {
-  color: #dc2626; /* Red for at-risk count */
+  color: #dc2626;
 }
 
 .dot-separator {

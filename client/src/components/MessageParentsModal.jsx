@@ -8,6 +8,8 @@ function MessageParentsModal({ username, onClose }) {
   const [broadcastText, setBroadcastText] = useState('');
   const [broadcastStatus, setBroadcastStatus] = useState('');
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   useEffect(() => {
     fetch(`/api/relationships?username=${username}`)
       .then((res) => res.json())
@@ -21,6 +23,21 @@ function MessageParentsModal({ username, onClose }) {
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());
   };
+
+  const uniqueRelationships = relationships.filter(
+      (rel, index, self) =>
+        index ===
+        self.findIndex(
+          (r) => formatParentLabel(r.parent_name) === formatParentLabel(rel.parent_name)
+        )
+    );
+
+    // Filter based on search query
+    const filteredRelationships = uniqueRelationships.filter((rel) =>
+      formatParentLabel(rel.parent_name)
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase())
+    );
 
   const handleBroadcast = async () => {
     if (!broadcastText.trim()) return;
@@ -51,26 +68,40 @@ function MessageParentsModal({ username, onClose }) {
   };
 
   return (
-    <div className="comm-overlay">
-      <div className="comm-panel">
-        <header className="comm-header">
-          <h3>Message Parents</h3>
-          <button onClick={onClose}>Close</button>
+    <div className="modal-overlay">
+      <div className="modal-card">
+      <header className="modal-header">
+          {activeThread ? (
+            <button className="back-btn" onClick={() => setActiveThread(null)}>
+              ← Back to Parent List
+            </button>
+          ) : (
+            <h3>Message Parents</h3>
+          )}
+          <button className="modal-close-x" onClick={onClose}>&times;</button>
         </header>
         
-
-        <div className="message-mode-toggle">
-          <button onClick={() => setIsBroadcasting(false)} disabled={!isBroadcasting}>
+        {!activeThread && (
+          <div className="message-mode-toggle">
+            <button onClick={() => setIsBroadcasting(false)} disabled={!isBroadcasting}>
             Message One Parent
           </button>
           <button onClick={() => setIsBroadcasting(true)} disabled={isBroadcasting}>
             Message All Parents
           </button>
         </div>
-
-        {!isBroadcasting && (
+        )}
+        {!activeThread && !isBroadcasting && (
           <div className="parent-list">
-            {relationships.map((rel) => {
+            <input
+              type="text"
+              className="parent-search-input"
+              placeholder="Search parent by name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          <div className="parent-list">
+            {filteredRelationships.map((rel) => {
               const parentLabel = formatParentLabel(rel.parent_name);
               return (
                 <div key={`${rel.studentid}-${rel.parentid}`} className="parent-row">
@@ -93,6 +124,7 @@ function MessageParentsModal({ username, onClose }) {
               );
             })}
           </div>
+          </div>
         )}
 
         {isBroadcasting && (
@@ -109,14 +141,15 @@ function MessageParentsModal({ username, onClose }) {
         )}
 
         {activeThread && (
-          <CommunicationThread
-            studentId={activeThread.studentId}
-            parentId={activeThread.parentId}
-            studentName={activeThread.studentName}
-            role="therapist"
-            username={username}
-            onClose={() => setActiveThread(null)}
-          />
+            <CommunicationThread
+              studentId={activeThread.studentId}
+              parentId={activeThread.parentId}
+              studentName={activeThread.studentName}
+              role="therapist"
+              username={username}
+              onClose={() => setActiveThread(null)}
+              embedded={true} 
+            />
         )}
       </div>
     </div>

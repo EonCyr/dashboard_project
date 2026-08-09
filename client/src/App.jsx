@@ -128,6 +128,12 @@ useEffect(() => {
     }
   }, [isLoggedIn]);
 
+  useEffect(() => {
+  if (isLoggedIn) {
+    loadData(role, username, setMetrics, setIsLoading, sortBy, sortOrder);
+  }
+}, [sortBy, sortOrder]);
+
   // Handle row click to trigger modal
   const handleRowClick = (student) => {
     setSelectedStudent(student);
@@ -186,7 +192,7 @@ useEffect(() => {
          {role === "therapist" ? (<TherapistSummaryCard 
           therapistName={username} 
           assignedStudentsCount={metrics.length}
-          maxCapacity={15}
+          maxCapacity={50}
           atRiskCount={metrics.filter(item => getRiskStatus(item, riskConfig).statusTag.includes('RISK')).length}
         />
         ) : null}
@@ -194,53 +200,64 @@ useEffect(() => {
         <h2>Student Metrics</h2>
         {data && <p>API Response: {data}</p>}
       
-        {role === "therapist" ? (
-          <div className="sorting-controls" style={{ marginBottom: '16px', display: 'flex', gap: '16px' }}>
-            <label>Sort by:
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                <option value="none">None</option>
-                <option value="id">Student ID</option>
-                <option value="band">Overall Band</option>
-                <option value="vocab">Vocab</option>
-                <option value="pap">Pa / Phonics</option>
-                <option value="writing">Writing</option>
-                <option value="lrc">Listening / Reading</option>
-                <option value="semester">Semester</option>
-              </select>
-            </label>
 
-            <label>Sort Order:
-              <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-                <option value="asc">Ascending</option>
-                <option value="desc">Descending</option>
-              </select>
-            </label>
-
-            
-
-          </div>
-        ) : null}
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <button className="load-button" onClick={() => loadData(role, username, setMetrics, setIsLoading, sortBy, sortOrder)} disabled={isLoading}>
-            {isLoading ? 'Loading...' : 'Load Data'}
-          </button>
-
-          {role === 'therapist' && (
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by ID, band (e.g. B4), or risk status..."
-              style={{ padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: '8px', flex: '1', minWidth: '220px', maxWidth: '360px' }}
-            />
-          )}
-        </div>
+       
         {/* ADAPTIVE CONTAINER: Always renders side-by-side structure regardless of data state */}
         <div className={`dashboard-content-layout ${role}`} style={{ marginTop: '20px' }}>
+        
           
           {/* MAIN CONTENT AREA */}
           <div className="main-data-section">
+         
+          
+          <div className="sorting-controls">
+            <button className="load-button" onClick={() => loadData(role, username, setMetrics, setIsLoading, sortBy, sortOrder)} disabled={isLoading}>
+              {isLoading ? 'Loading...' : 'Load Data'}
+            </button>
+
+            {role === 'therapist' && (
+            <div className="search-input-wrapper">
+              
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by ID, band (e.g. B4), or risk status..."
+                style={{ padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: '8px', flex: '1', width:'100%'}}
+              />
+            </div>
+          )}
+        
+          <div className="sort-group">
+            <span className="sort-pill-label">Sort:</span>
+            <select 
+              className="sort-pill-select"
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="none">Default</option>
+              <option value="id">Student ID</option>
+              <option value="band">Overall Band</option>
+              <option value="vocab">Vocab</option>
+              <option value="pap">Pa / Phonics</option>
+              <option value="writing">Writing</option>
+              <option value="lrc">Listening / Reading</option>
+              <option value="semester">Semester</option>
+            </select>
+
+            {/* Toggle Button for Ascending/Descending */}
+            <button 
+              type="button"
+              className="sort-direction-toggle"
+              title={sortOrder === 'asc' ? "Sort Ascending" : "Sort Descending"}
+              onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+              
+            >
+              {sortOrder === 'asc' ? '↑' : '↓'}
+            </button>
+          </div>
+        </div>
+
              {role === 'parent' && metrics.length > 0 && (
               <ProfileSummaryCard studentId={metrics[0]?.id} studentName={metrics[0]?.name} />
             )}

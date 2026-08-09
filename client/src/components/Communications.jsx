@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-function CommunicationThread({ studentId, parentId, studentName, role, username, onClose }) {
+function CommunicationThread({ studentId, parentId, studentName, role, username, onClose, embedded = false }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -58,29 +58,40 @@ function CommunicationThread({ studentId, parentId, studentName, role, username,
     }
   };
 
-  return (
-    <div className="comm-overlay">
-      <div className="comm-panel">
+  const threadBody = (
+    <div className="comm-thread-content">
+      {!embedded && (
         <header className="comm-header">
           <h3>{studentName} — Home &amp; Progress Notes</h3>
           <button onClick={onClose}>Close</button>
         </header>
+      )}
+
+      {embedded && (
+        <div className="thread-title-heading">
+          Chat with {studentName}
+        </div>
+      )}
 
         <div className="comm-thread">
           {isLoading && <p>Loading...</p>}
           {!isLoading && messages.length === 0 && <p>No messages yet.</p>}
           {messages.map((msg) => (
             <div key={msg.id} className={`comm-message ${msg.sender_role}`}>
-              <p className="comm-meta">
-                <strong>{msg.sender_role === 'parent' ? 'Parent' : 'Therapist'}</strong>
-                {' '}({msg.sender_username}) — {new Date(msg.created_at).toLocaleString()}
-              </p>
-              <p>{msg.message}</p>
+              <div className="compact-msg-header">
+              <span className="author-tag">
+                {msg.sender_role === 'parent' ? '👤 Parent' : '🩺 Therapist'} ({msg.sender_username})
+              </span>
+              <span className="time-tag">
+                {new Date(msg.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+              </span>
             </div>
+            <p className="compact-msg-body">{msg.message}</p>
+          </div>
           ))}
         </div>
 
-        {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+        {errorMessage && <p style={{ color: 'red', margin: '8px 0' }}>{errorMessage}</p>}
 
         <form className="comm-form" onSubmit={handleSubmit}>
           <textarea
@@ -96,6 +107,19 @@ function CommunicationThread({ studentId, parentId, studentName, role, username,
             {role === 'parent' ? 'Submit Observation' : 'Submit Recommendation'}
           </button>
         </form>
+      </div>
+    
+  );
+
+if (embedded) {
+    return threadBody;
+  }
+
+  // Standalone fallback popup
+  return (
+    <div className="comm-overlay">
+      <div className="comm-panel">
+        {threadBody}
       </div>
     </div>
   );

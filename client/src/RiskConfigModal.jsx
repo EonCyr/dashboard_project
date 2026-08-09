@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function RiskConfigModal({ isOpen, onClose, username, onSaveSuccess }) {
+export default function RiskConfigModal({ isOpen, onClose, username, onSaveSuccess, initialConfigs }) {
   const [selectedBand, setSelectedBand] = useState('A');
   const [bandConfigs, setBandConfigs] = useState({
     A: { criticalScore: 22, moderateScore: 26, highPerformerScore: 29, baselineWindow: 2 },
@@ -12,11 +12,15 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
 
   // Fetch current rules when modal opens
   useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+
     if (isOpen) {
-      fetch('/api/config/risk')
+      fetch('/api/config/risk', { signal: controller.signal })
         .then((res) => res.json())
         .then((data) => {
-          if (data && (data.A || data.B || data.C)) {
+          if (isMounted && data && (data.A || data.B || data.C)) {
             setBandConfigs((prev) => ({
               A: data.A ? mapDataToState(data.A) : prev.A,
               B: data.B ? mapDataToState(data.B) : prev.B,
@@ -24,8 +28,17 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
             }));
           }
         })
-        .catch(() => setStatusMessage({ text: 'Loaded default threshold settings.', type: 'info' }));
-    }
+        .catch(() => {
+        if (err.name === 'AbortError') return; // Silence test unmount cancellations
+        if (isMounted) {
+          setStatusMessage({ text: 'Loaded default threshold settings.', type: 'info' });
+          }
+        });
+      }
+      return () => {
+          isMounted = false;
+          controller.abort(); // Cancels the pending fetch when the test finishes
+      };
   }, [isOpen]);
 
   const mapDataToState = (d) => ({
