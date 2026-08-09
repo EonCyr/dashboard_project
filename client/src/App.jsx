@@ -216,8 +216,9 @@ useEffect(() => {
             </button>
 
             {role === 'therapist' && (
+              <>
             <div className="search-input-wrapper">
-              
+  
               <input
                 type="text"
                 value={searchQuery}
@@ -226,7 +227,7 @@ useEffect(() => {
                 style={{ padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: '8px', flex: '1', width:'100%'}}
               />
             </div>
-          )}
+          
         
           <div className="sort-group">
             <span className="sort-pill-label">Sort:</span>
@@ -256,6 +257,9 @@ useEffect(() => {
               {sortOrder === 'asc' ? '↑' : '↓'}
             </button>
           </div>
+          </>
+        )}
+
         </div>
 
              {role === 'parent' && metrics.length > 0 && (
