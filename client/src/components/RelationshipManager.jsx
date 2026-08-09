@@ -95,7 +95,7 @@ const handleClose = () => {
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>Parent-Student Relationship Manager</h3>
-          <button className="close-btn" onClick={onClose}>&times;</button>
+          <button className="close-btn" onClick={handleClose}>&times;</button>
         </div>
 
         <div style={{ display: 'grid', gap: '0.6rem', marginBottom: '0.75rem' }}>
@@ -115,7 +115,7 @@ const handleClose = () => {
             value={relationshipInput}
             onChange={(e) => setRelationshipInput(e.target.value)}
           >
-            <option value="" disabled selected hidden>Relationship</option>
+            <option value="" disabled hidden>Relationship</option>
             <option value="Mother">Mother</option>
             <option value="Father">Father</option>
             <option value="Guardian">Guardian</option>

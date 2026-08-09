@@ -20,9 +20,12 @@ jest.mock('recharts', () => ({
   Line: ({ dataKey, name }) => (
     <div data-testid="line" data-key={dataKey} data-name={name} />
   ),
-  Bar: ({ dataKey, name }) => (
-    <div data-testid="bar" data-key={dataKey} data-name={name} />
+  Bar: ({ dataKey, name, children }) => (
+    <div data-testid="bar" data-key={dataKey} data-name={name}>
+      {children}
+    </div>
   ),
+  Cell: ({ fill }) => <div data-testid="cell" data-fill={fill} />,
   XAxis: ({ dataKey }) => <div data-testid="x-axis" data-key={dataKey} />,
   YAxis: ({ label }) => <div data-testid="y-axis" data-label={label?.value} />,
   Legend: () => <div data-testid="legend" />,
@@ -73,6 +76,9 @@ describe('StudentLineChart', () => {
 
     render(<SemBarChart semesterData={selectedSemesterData} />);
     const chart = screen.getByTestId('bar-chart');
-    expect(chart).toHaveAttribute('data-values', '[{"category":"Vocabulary","value":2.5},{"category":"Pa / Phonics","value":4},{"category":"Writing","value":1.2},{"category":"Listening / Reading","value":0.8}]');
+    const cells = screen.getAllByTestId('cell');
+
+    expect(chart).toHaveAttribute('data-values', '[{"category":"Vocabulary","value":2.5,"color":"#2563eb"},{"category":"Pa / Phonics","value":4,"color":"#16a34a"},{"category":"Writing","value":1.2,"color":"#d97706"},{"category":"Listening / Reading","value":0.8,"color":"#7c3aed"}]');
+    expect(cells.map((cell) => cell.getAttribute('data-fill'))).toEqual(['#2563eb', '#16a34a', '#d97706', '#7c3aed']);
   });
 });
