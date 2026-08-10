@@ -327,6 +327,7 @@ app.get('/reports/parent-summary/:studentId', async (req, res) => {
     SELECT 
       a.scores, a.band, a.semester,
       u.username AS therapist_name,
+      u.email AS therapist_email,
       ts.therapistid,
       s.date_of_enrollment
     FROM assessments a
@@ -361,20 +362,18 @@ app.get('/reports/parent-summary/:studentId', async (req, res) => {
 
     // Pull the latest assessment per student whose band starts with the same letter
     const avgSql = `
-      SELECT a.scores
-      FROM assessments a
-      INNER JOIN (
-        SELECT studentid, MAX(semester) AS latest_semester
-        FROM assessments
-        WHERE band LIKE ?
-        GROUP BY studentid
-      ) latest ON a.studentid = latest.studentid AND a.semester = latest.latest_semester
-      WHERE a.studentid != ?
-        AND a.band LIKE ?
-    `;
-    const bandPattern = `${studentBand}%`;
-
-    pool.query(avgSql, [bandPattern, studentId, bandPattern], async (avgErr, avgRows) => {
+          SELECT a.scores
+             FROM assessments a
+             INNER JOIN (
+               SELECT studentid, MAX(semester) AS latest_semester
+               FROM assessments
+               GROUP BY studentid
+             ) latest ON a.studentid = latest.studentid AND a.semester = latest.latest_semester
+             WHERE a.studentid != ?
+         `;
+         
+     
+         pool.query(avgSql, [studentId], async (avgErr, avgRows) => {
   if (avgErr) {
     console.error('Error fetching band averages:', avgErr);
     avgRows = []; // treat as no peers, continue safely
@@ -467,17 +466,18 @@ Peer average data: ${bandAvgText}`,
         const data = await response.json();
         const summary = data.content.map((c) => c.text || '').join(' ').trim();
 
-        res.json({
-          summary,
-          band: rows[0].band,
-          semester: rows[0].semester,
-          therapistName: rows[0].therapist_name,
-          therapistId: rows[0].therapistid,
-          assignedDuration,
-          enrollmentDate: rows[0].date_of_enrollment,
-          peerCount: avgRows ? avgRows.length : 0,
-          bandAvgText,
-        });
+      res.json({
+        summary,
+        band: rows[0].band,
+        semester: rows[0].semester,
+        therapistName: rows[0].therapist_name,
+        therapistEmail: rows[0].therapist_email,  // add this
+        therapistId: rows[0].therapistid,
+        assignedDuration,
+        enrollmentDate: rows[0].date_of_enrollment,
+        peerCount: avgRows ? avgRows.length : 0,
+        bandAvgText,
+      });
      } catch (aiError) {
         console.error('Profile summary AI error FULL:', JSON.stringify(aiError, Object.getOwnPropertyNames(aiError)));
         res.status(502).json({ error: 'Could not generate summary right now.' });
