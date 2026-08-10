@@ -95,32 +95,19 @@ function ProfileSummaryCard({ studentId, studentName }) {
         </div>
       </div>
 
-      {/* Therapist info strip */}
+      {/* Toggle strip — button only, no details shown here */}
       {status === 'ready' && therapistName && (
         <div style={{
           borderTop: '1px solid #f0f0f0',
           padding: '10px 20px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           background: '#fafbff',
-          flexWrap: 'wrap',
-          gap: '8px',
         }}>
-       <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-          <span style={{ marginRight: '16px' }}>
-            <strong>Therapist:</strong> {therapistName}
-          </span>
-          <span style={{ marginRight: '16px' }}>
-            <strong>Assigned:</strong> {assignedDuration}
-          </span>
-          <span>
-            <strong>Email:</strong> {therapistEmail || 'Not available'}
-          </span>
-        </div>
-
           <button
             onClick={() => setShowTherapistDetail(prev => !prev)}
+            aria-expanded={showTherapistDetail}
             style={{
               fontSize: '0.78rem',
               padding: '4px 12px',
@@ -132,12 +119,12 @@ function ProfileSummaryCard({ studentId, studentName }) {
               fontWeight: 600,
             }}
           >
-            {showTherapistDetail ? 'Hide details ↑' : 'View therapist ↓'}
+            {showTherapistDetail ? 'Hide therapist details ↑' : 'View therapist details ↓'}
           </button>
         </div>
       )}
 
-      {/* Therapist detail panel — expands inline */}
+      {/* Therapist detail panel  */}
       {showTherapistDetail && status === 'ready' && (
         <div style={{
           padding: '14px 20px',
@@ -147,10 +134,13 @@ function ProfileSummaryCard({ studentId, studentName }) {
           color: '#374151',
         }}>
           <p style={{ margin: '0 0 6px' }}>
-            <strong>Name:</strong> {therapistName}
+            <strong>Therapist:</strong> {therapistName}
           </p>
           <p style={{ margin: '0 0 6px' }}>
             <strong>Assigned for:</strong> {assignedDuration}
+          </p>
+          <p style={{ margin: '0 0 6px' }}>
+            <strong>Email:</strong> {therapistEmail || 'Not available'}
           </p>
           <p style={{ margin: 0, color: '#6b7280', fontSize: '0.78rem' }}>
             To reach your therapist, use the "Contact Tutor" button in the panel on the right.
