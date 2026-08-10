@@ -104,7 +104,22 @@ export function ParentModal({ metrics, username }) {
           </div>
         )}
       </div>
-      
+      <div className="card-grid">
+        {[
+          { label: 'Vocab', key: 'vocab' },
+          { label: 'Phonics', key: 'pap' },
+          { label: 'Writing', key: 'writing' },
+          { label: 'Listening', key: 'lrc' },
+        ].map((card) => {
+          const categoryTotal = activeSemesterData?.scores?.[card.key]?.total ?? 'N/A';
+          return (
+            <article className="data-card" key={card.label}>
+              <p className="card-label">{card.label}</p>
+              <h3>{categoryTotal}</h3>
+            </article>
+          );
+        })}
+      </div>
       <div className="chart-row">
         <div className="chart-panel" style={{ width: '50%' }}>
           <h4>Semester Overview</h4>
@@ -131,23 +146,7 @@ export function ParentModal({ metrics, username }) {
         </div>
       </div>
 
-      {/* Filtered Score Cards Grid using calculated scores */}
-      <div className="card-grid">
-        {[
-          { label: 'Vocab', key: 'vocab' },
-          { label: 'Phonics', key: 'pap' },
-          { label: 'Writing', key: 'writing' },
-          { label: 'Listening', key: 'lrc' },
-        ].map((card) => {
-          const categoryTotal = activeSemesterData?.scores?.[card.key]?.total ?? 'N/A';
-          return (
-            <article className="data-card" key={card.label}>
-              <p className="card-label">{card.label}</p>
-              <h3>{categoryTotal}</h3>
-            </article>
-          );
-        })}
-      </div>
+      
     </div>
   );
 }
