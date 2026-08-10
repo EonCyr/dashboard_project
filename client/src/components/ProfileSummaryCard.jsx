@@ -7,6 +7,7 @@ function ProfileSummaryCard({ studentId, studentName }) {
   const [assignedDuration, setAssignedDuration] = useState(null);
   const [showTherapistDetail, setShowTherapistDetail] = useState(false);
   const [status, setStatus] = useState('loading');
+  const [therapistEmail, setTherapistEmail] = useState(null);
 
   useEffect(() => {
     if (!studentId) return;
@@ -24,6 +25,7 @@ function ProfileSummaryCard({ studentId, studentName }) {
           setBand(data.band);
           setTherapistName(data.therapistName);
           setAssignedDuration(data.assignedDuration);
+          setTherapistEmail(data.therapistEmail);
           setStatus('ready');
         }
       })
@@ -105,14 +107,17 @@ function ProfileSummaryCard({ studentId, studentName }) {
           flexWrap: 'wrap',
           gap: '8px',
         }}>
-          <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-            <span style={{ marginRight: '16px' }}>
-               <strong>Therapist:</strong> {therapistName}
-            </span>
-            <span>
-               <strong>Assigned:</strong> {assignedDuration}
-            </span>
-          </div>
+       <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+          <span style={{ marginRight: '16px' }}>
+            <strong>Therapist:</strong> {therapistName}
+          </span>
+          <span style={{ marginRight: '16px' }}>
+            <strong>Assigned:</strong> {assignedDuration}
+          </span>
+          <span>
+            <strong>Email:</strong> {therapistEmail || 'Not available'}
+          </span>
+        </div>
 
           <button
             onClick={() => setShowTherapistDetail(prev => !prev)}
