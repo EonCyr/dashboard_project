@@ -319,69 +319,173 @@ app.get('/student-history/:studentid', (req, res) => {
         res.json(rows);
     });
 });
-
+console.log('ANTHROPIC_API_KEY present:', !!process.env.ANTHROPIC_API_KEY);
 app.get('/reports/parent-summary/:studentId', async (req, res) => {
   const { studentId } = req.params;
 
-  const sql = `
-    SELECT scores, band, semester
-    FROM assessments
-    WHERE studentid = ?
-    ORDER BY semester DESC
+  const studentSql = `
+    SELECT 
+      a.scores, a.band, a.semester,
+      u.username AS therapist_name,
+      ts.therapistid,
+      s.date_of_enrollment
+    FROM assessments a
+    JOIN students s ON s.studentid = a.studentid
+    JOIN therapist_student ts ON ts.studentid = a.studentid
+    JOIN users u ON u.userid = ts.therapistid
+    WHERE a.studentid = ?
+    ORDER BY a.semester DESC
     LIMIT 1
   `;
 
-  pool.query(sql, [studentId], async (err, rows) => {
+  pool.query(studentSql, [studentId], async (err, rows) => {
     if (err) {
-      console.error('Error fetching latest assessment for summary:', err);
+      console.error('Error fetching summary data:', err);
       return res.status(500).json({ error: 'Database error' });
     }
     if (!rows || rows.length === 0) {
       return res.status(404).json({ error: 'No assessment data available yet.' });
     }
 
-    let scores;
+    let studentScores;
     try {
-      scores = typeof rows[0].scores === 'string' ? JSON.parse(rows[0].scores) : rows[0].scores;
+      studentScores = typeof rows[0].scores === 'string'
+        ? JSON.parse(rows[0].scores)
+        : rows[0].scores;
     } catch (parseError) {
-      console.error('Error parsing scores for summary:', parseError);
       return res.status(500).json({ error: 'Corrupted assessment data.' });
     }
 
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 120,
-          messages: [{
-            role: 'user',
-            content: `In exactly 1 short sentence, plain ASCII text, no markdown, give a warm summary of this child's current literacy progress for a parent dashboard banner. Data: ${JSON.stringify(scores)}, overall band: ${rows[0].band}`,
-          }],
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
+    const studentBand = (rows[0].band || 'B').charAt(0).toUpperCase();
 
-      if (!response.ok) throw new Error(`AI API returned ${response.status}`);
-      const data = await response.json();
-      const summary = data.content.map((c) => c.text || '').join(' ').trim();
 
-      res.json({ summary, band: rows[0].band, semester: rows[0].semester });
-    } catch (aiError) {
-      console.error('Profile summary AI error:', aiError);
-      res.status(502).json({ error: 'Could not generate summary right now.' });
-    }
+    // Pull the latest assessment per student whose band starts with the same letter
+    const avgSql = `
+      SELECT a.scores
+      FROM assessments a
+      INNER JOIN (
+        SELECT studentid, MAX(semester) AS latest_semester
+        FROM assessments
+        WHERE band LIKE ?
+        GROUP BY studentid
+      ) latest ON a.studentid = latest.studentid AND a.semester = latest.latest_semester
+      WHERE a.studentid != ?
+        AND a.band LIKE ?
+    `;
+    const bandPattern = `${studentBand}%`;
+
+    pool.query(avgSql, [bandPattern, studentId, bandPattern], async (avgErr, avgRows) => {
+  if (avgErr) {
+    console.error('Error fetching band averages:', avgErr);
+    avgRows = []; // treat as no peers, continue safely
+  }
+
+      // Compute average raw_score per domain across all matched peers
+      let bandAvgText = `There is not yet enough data from other students in Band ${studentBand} to provide a peer comparison.`;
+
+      if (avgRows && avgRows.length > 0) {
+        const domainTotals = { vocab: 0, pap: 0, writing: 0, lrc: 0 };
+        const domainCounts = { vocab: 0, pap: 0, writing: 0, lrc: 0 };
+
+        avgRows.forEach((row) => {
+          let s;
+          try {
+            s = typeof row.scores === 'string' ? JSON.parse(row.scores) : row.scores;
+          } catch { return; }
+
+          const extract = (field) => parseFloat(
+            (s[field] && s[field].raw_score != null) ? s[field].raw_score : 0
+          ) || 0;
+
+          const vocabScore = extract('vocab');
+          const papScore = extract('pa/phonics');
+          const writingScore = extract('writing');
+          const lrcScore = extract('listening/readingcomprehension');
+
+          if (vocabScore) { domainTotals.vocab += vocabScore; domainCounts.vocab++; }
+          if (papScore) { domainTotals.pap += papScore; domainCounts.pap++; }
+          if (writingScore) { domainTotals.writing += writingScore; domainCounts.writing++; }
+          if (lrcScore) { domainTotals.lrc += lrcScore; domainCounts.lrc++; }
+        });
+
+        const avg = (total, count) => count > 0 ? (total / count).toFixed(1) : 'N/A';
+
+        bandAvgText = `Among ${avgRows.length} other Band ${studentBand} student(s), average scores are: ` +
+          `Vocab ${avg(domainTotals.vocab, domainCounts.vocab)}, ` +
+          `Phonics ${avg(domainTotals.pap, domainCounts.pap)}, ` +
+          `Writing ${avg(domainTotals.writing, domainCounts.writing)}, ` +
+          `Listening ${avg(domainTotals.lrc, domainCounts.lrc)}.`;
+      }
+
+      // enrollment duration
+      const enrollmentDate = new Date(rows[0].date_of_enrollment);
+      const now = new Date();
+      const monthsDiff = (now.getFullYear() - enrollmentDate.getFullYear()) * 12
+        + (now.getMonth() - enrollmentDate.getMonth());
+      const assignedDuration = monthsDiff < 1
+        ? 'less than a month'
+        : monthsDiff === 1 ? '1 month' : `${monthsDiff} months`;
+
+    
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': process.env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 180,
+            messages: [{
+              role: 'user',
+              content: `You are writing a short progress update for a parent dashboard card. Write exactly up to 3  sentences in plain, warm, encouraging language.
+
+Sentence 1: Briefly summarize this child's current literacy strengths based on their scores.
+Sentence 2: Give a warm, balanced comparison to their Band ${studentBand} peers using the real peer averages below. Highlight where this child is doing well relative to peers and gently note any area to keep working on, without causing worry.
+
+Rules:
+- Plain ASCII text only, no markdown, no bullet points, no emoji
+- Keep it warm, supportive, and parent-friendly — not clinical or alarming
+- If there are no peer students yet, skip the comparison and just encourage the child's progress
+
+This child's scores: ${JSON.stringify(studentScores)}
+Overall band: ${rows[0].band}
+Peer average data: ${bandAvgText}`,
+            }],
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeout);
+
+        if (!response.ok) throw new Error(`AI API returned ${response.status}`);
+        const data = await response.json();
+        const summary = data.content.map((c) => c.text || '').join(' ').trim();
+
+        res.json({
+          summary,
+          band: rows[0].band,
+          semester: rows[0].semester,
+          therapistName: rows[0].therapist_name,
+          therapistId: rows[0].therapistid,
+          assignedDuration,
+          enrollmentDate: rows[0].date_of_enrollment,
+          peerCount: avgRows ? avgRows.length : 0,
+          bandAvgText,
+        });
+   
+      } catch (aiError) {
+        console.error('Profile summary AI error FULL:', JSON.stringify(aiError, Object.getOwnPropertyNames(aiError)));
+        res.status(502).json({ error: 'Could not generate summary right now.' });
+      }
+    });
   });
 });
-
 // Report generation feature (added) 
 
 const reportCache = new Map();

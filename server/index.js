@@ -1,4 +1,4 @@
-require('dotenv').config({ silent: true }); //Load the .env file if it exists
+require('dotenv').config({ silent: true });
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -6,32 +6,6 @@ const PDFDocument = require('pdfkit');
 const { Document, Packer, Paragraph, HeadingLevel } = require('docx');
 app.use(cors());
 app.use(express.json());
-
-app.get('/', (req, res) => {
-    res.json({ message: "Dashboard API is running!" });
-});
-
-const path = require('path');
-const fs = require('fs');
-const multer = require('multer');
-
-// Configure Multer to upload directly to the root 'data' directory
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const dataDir = path.join(__dirname, '..', 'data');
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    cb(null, dataDir);
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname);
-  }
-});
-
-const upload = multer({ storage: storage });
-
-const PORT = process.env.PORT || 3000;
 
 //MySQL stuff
 const mysql = require('mysql2');
@@ -57,165 +31,59 @@ const connectWithRetry = () => {
 
 connectWithRetry();
 
-// GET /api/config/risk (or /config/risk)
+// 1. GET Endpoint for risk
 app.get('/config/risk', async (req, res) => {
   try {
     const [rows] = await pool.promise().query(
-      `SELECT Band AS band, 
-              Critical_Score_Ceiling AS critical_score, 
-              Moderate_Score_Ceiling AS moderate_score, 
-              High_Performer_Benchmark AS high_performer_score, 
-              Baseline_Window_Months AS baseline_window
-       FROM Risk_Threshold_Configurations`
+      `SELECT Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months 
+       FROM Risk_Threshold_Configurations ORDER BY Last_Updated DESC LIMIT 1`
     );
-
-    const bandConfigs = {};
-    rows.forEach((r) => { 
-      bandConfigs[r.band] = {
-        critical_score: r.critical_score,
-        moderate_score: r.moderate_score,
-        high_performer_score: r.high_performer_score,
-        baseline_window: r.baseline_window
-      }; 
-    });
-
-    return res.status(200).json(bandConfigs);
+    
+    if (rows.length > 0) {
+      res.status(200).json({
+        critical_score: rows[0].Critical_Score_Ceiling,
+        moderate_score: rows[0].Moderate_Score_Ceiling,
+        high_performer_score: rows[0].High_Performer_Benchmark,
+        baseline_window: rows[0].Baseline_Window_Months
+      });
+    } else {
+      res.status(200).json({ critical_score: 20, moderate_score: 25, high_performer_score: 28, baseline_window: 2 });
+    }
   } catch (err) {
     console.error('Fetch Risk Config Error:', err);
-    return res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to fetch risk configurations.' });
   }
 });
 
-// PUT /api/config/risk (or /config/risk)
+// 2. PUT Endpoint for risk
 app.put('/config/risk', async (req, res) => {
-  const { band, criticalScore, moderateScore, highPerformerScore, baselineWindow } = req.body;
+  const { criticalScore, moderateScore, highPerformerScore, baselineWindow } = req.body;
 
+  if (Number(criticalScore) >= Number(moderateScore) || Number(moderateScore) >= Number(highPerformerScore)) {
+    return res.status(400).json({ error: 'Validation Error: Critical < Moderate < High Performer.' });
+  }
   try {
-    const targetBand = band || 'B';
-    
     await pool.promise().query(
       `INSERT INTO Risk_Threshold_Configurations 
-       (Band, Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months)
-       VALUES (?, ?, ?, ?, ?)
+       (Configuration_ID, Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months)
+       VALUES (1, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE 
        Critical_Score_Ceiling = VALUES(Critical_Score_Ceiling),
        Moderate_Score_Ceiling = VALUES(Moderate_Score_Ceiling),
        High_Performer_Benchmark = VALUES(High_Performer_Benchmark),
        Baseline_Window_Months = VALUES(Baseline_Window_Months)`,
-      [targetBand, criticalScore, moderateScore, highPerformerScore, baselineWindow]
+      [criticalScore, moderateScore, highPerformerScore, baselineWindow]
     );
 
-    return res.status(200).json({ message: `Band ${targetBand} threshold updated successfully!` });
+    res.status(200).json({ message: 'Updated performance metrics successfully saved.' });
   } catch (err) {
-    console.error('Update Risk Config Error:', err);
-    return res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Database update failed.' });
   }
 });
 
 app.get('/', (req, res) => {
     res.json({ message: "Dashboard API is running!" });
 });
-
-// 1. POST Endpoint for Individual Assessment Submission
-app.post('/assessments/single', async (req, res) => {
-  console.log('Received raw req.body:', req.body); //For debugging purposes
-  try {
-    const data = req.body;
-    const val = (v) => (v !== undefined && v !== null && v !== '' && !isNaN(v) ? Number(v) : 0);
-    const incomingScores = data.scores || {};
-
-    const assessmentRecord = {
-      therapistid: val(data.therapistId) || null,
-      studentid: val(data.studentId),
-      semester: data.semester || '2026 Sem 1',
-      centre: data.centre || 'Default Centre',
-      band: data.band && data.band.trim() !== '' ? data.band.trim() : null,
-      scores: JSON.stringify({
-        vocab: {
-          picture_naming: val(incomingScores.vocab?.picture_naming),
-          picture_description: val(incomingScores.vocab?.picture_description)
-        },
-        "pa/phonics": {
-          fluency: val(incomingScores["pa/phonics"]?.fluency),
-          phonics: val(incomingScores["pa/phonics"]?.phonics),
-          word_spelling: val(incomingScores["pa/phonics"]?.word_spelling),
-          pa_identification: val(incomingScores["pa/phonics"]?.pa_identification)
-        },
-        writing: {
-          edit_d1: val(incomingScores.writing?.edit_d1),
-          edit_d2: val(incomingScores.writing?.edit_d2),
-          edit_d3: val(incomingScores.writing?.edit_d3),
-          letter_formation: val(incomingScores.writing?.letter_formation),
-          narrative_writing: val(incomingScores.writing?.narrative_writing),
-          exposition_writing: val(incomingScores.writing?.exposition_writing)
-        },
-        "listening/readingcomprehension": {
-          persuasive_writing: val(incomingScores["listening/readingcomprehension"]?.persuasive_writing),
-          reading_comprehension: val(incomingScores["listening/readingcomprehension"]?.reading_comprehension),
-          listening_comprehension: val(incomingScores["listening/readingcomprehension"]?.listening_comprehension)
-        }
-      })
-    };
-
-    const query = `
-      INSERT INTO assessments (therapistid, studentid, semester, centre, scores, band) 
-      VALUES (?, ?, ?, ?, ?, COALESCE(?, (SELECT current_band FROM students WHERE studentid = ?)))
-      ON DUPLICATE KEY UPDATE 
-        therapistid = VALUES(therapistid),
-        centre = VALUES(centre),
-        scores = VALUES(scores),
-        band = COALESCE(VALUES(band), assessments.band, (SELECT current_band FROM students WHERE studentid = ?));
-    `;
-
-    const values = [
-      assessmentRecord.therapistid,
-      assessmentRecord.studentid,
-      assessmentRecord.semester,
-      assessmentRecord.centre,
-      assessmentRecord.scores,
-      assessmentRecord.band,
-      assessmentRecord.studentid,
-      assessmentRecord.studentid
-    ];
-
-    const executeQuery = (sql, vals) => {
-      return new Promise((resolve, reject) => {
-        pool.query(sql, vals, (err, results) => {
-          if (err) return reject(err);
-          resolve(results);
-        });
-      });
-    };
-
-    await executeQuery(query, values);
-
-    res.status(200).json({ message: 'Assessment saved successfully with therapist ID!' });
-  } catch (error) {
-    console.error('Error saving individual assessment:', error);
-    res.status(500).json({ error: 'Failed to save individual assessment' });
-  }
-});
-
-// 2. POST Endpoint for Bulk File Import (Triggers your Python Ingestion Script)
-app.post('/assessments/bulk-import', upload.single('file'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded.' });
-  }
-
-  const filePath = req.file.path;
-  const { exec } = require('child_process');
-
-  exec(`python3 /app/ingestor/ingest.py --file "${filePath}"`, (error, stdout, stderr) => {
-    if (error) {
-      console.error('Bulk Import Exec Error:', error);
-      console.error('Python STDERR:', stderr);
-      return res.status(500).json({ error: `Failed to process bulk upload script: ${stderr || error.message}` });
-    }
-
-    res.status(200).json({ message: 'Mass file imported successfully!' });
-  });
-});
-
 
 app.get('/students', (req, res) => {
     const { role, username } = req.query;
@@ -348,40 +216,25 @@ app.route('/relationships')
             const therapistId = userRows[0].userid;
             const verifySql = 'SELECT 1 FROM therapist_student WHERE therapistid = ? AND studentid = ?';
 
-            pool.query(verifySql, [therapistId, studentid], (verifyErr, verifyRows) => {
+            pool.query(verifySql, [therapistId, studentid], (verifyErr) => {
                 if (verifyErr) {
                     console.error('Error verifying therapist assignment:', verifyErr);
                     return res.status(500).json({ error: 'Failed to verify access' });
                 }
-                if (!verifyRows.length) {
-                    return res.status(403).json({ error: 'This student is not associated with your account.', code: 'STUDENT_NOT_RELATED' });
-                }
-
-                const parentLookupSql = 'SELECT userid FROM parents WHERE userid = ?';
-
-                pool.query(parentLookupSql, [parentid], (parentErr, parentRows) => {
-                  if (parentErr) {
-                      console.error('Error verifying parent account:', parentErr);
-                      return res.status(500).json({ error: 'Failed to verify parent account' });
-                  }
-                  if (!parentRows.length) {
-                      return res.status(404).json({ error: 'No parent account exists with that ID.', code: 'PARENT_NOT_FOUND' });
-                  }
 
                 const insertSql = `
-                  INSERT INTO parent_student (parentid, studentid, relationship)
-                  VALUES (?, ?, ?)
-                  ON DUPLICATE KEY UPDATE relationship = VALUES(relationship)
+                    INSERT INTO parent_student (parentid, studentid, relationship)
+                    VALUES (?, ?, ?)
+                    ON DUPLICATE KEY UPDATE relationship = VALUES(relationship)
                 `;
 
                 pool.query(insertSql, [parentid, studentid, relationship || 'Parent'], (insertErr) => {
-                  if (insertErr) {
-                    console.error('Error creating relationship:', insertErr);
-                    return res.status(500).json({ error: 'Failed to create relationship' });
-                  }
-                  res.json({ message: 'Relationship added successfully' });
+                    if (insertErr) {
+                        console.error('Error creating relationship:', insertErr);
+                        return res.status(500).json({ error: 'Failed to create relationship' });
+                    }
+                    res.json({ message: 'Relationship added successfully' });
                 });
-              });
             });
         });
     })
@@ -407,13 +260,10 @@ app.route('/relationships')
             const therapistId = userRows[0].userid;
             const verifySql = 'SELECT 1 FROM therapist_student WHERE therapistid = ? AND studentid = ?';
 
-            pool.query(verifySql, [therapistId, studentid], (verifyErr, verifyRows) => {
+            pool.query(verifySql, [therapistId, studentid], (verifyErr) => {
                 if (verifyErr) {
                     console.error('Error verifying therapist assignment:', verifyErr);
                     return res.status(500).json({ error: 'Failed to verify access' });
-                }
-                if (!verifyRows.length) {
-                    return res.status(403).json({ error: 'This student is not associated with your account.', code: 'STUDENT_NOT_RELATED' });
                 }
 
                 const deleteSql = 'DELETE FROM parent_student WHERE parentid = ? AND studentid = ?';
@@ -469,9 +319,172 @@ app.get('/student-history/:studentid', (req, res) => {
         res.json(rows);
     });
 });
+console.log('ANTHROPIC_API_KEY present:', !!process.env.ANTHROPIC_API_KEY);
+app.get('/reports/parent-summary/:studentId', async (req, res) => {
+  const { studentId } = req.params;
+
+  const studentSql = `
+    SELECT 
+      a.scores, a.band, a.semester,
+      u.username AS therapist_name,
+      ts.therapistid,
+      s.date_of_enrollment
+    FROM assessments a
+    JOIN students s ON s.studentid = a.studentid
+    JOIN therapist_student ts ON ts.studentid = a.studentid
+    JOIN users u ON u.userid = ts.therapistid
+    WHERE a.studentid = ?
+    ORDER BY a.semester DESC
+    LIMIT 1
+  `;
+
+  pool.query(studentSql, [studentId], async (err, rows) => {
+    if (err) {
+      console.error('Error fetching summary data:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: 'No assessment data available yet.' });
+    }
+
+    let studentScores;
+    try {
+      studentScores = typeof rows[0].scores === 'string'
+        ? JSON.parse(rows[0].scores)
+        : rows[0].scores;
+    } catch (parseError) {
+      return res.status(500).json({ error: 'Corrupted assessment data.' });
+    }
+
+    const studentBand = (rows[0].band || 'B').charAt(0).toUpperCase();
 
 
+    // Pull the latest assessment per student whose band starts with the same letter
+    const avgSql = `
+      SELECT a.scores
+      FROM assessments a
+      INNER JOIN (
+        SELECT studentid, MAX(semester) AS latest_semester
+        FROM assessments
+        WHERE band LIKE ?
+        GROUP BY studentid
+      ) latest ON a.studentid = latest.studentid AND a.semester = latest.latest_semester
+      WHERE a.studentid != ?
+        AND a.band LIKE ?
+    `;
+    const bandPattern = `${studentBand}%`;
 
+    pool.query(avgSql, [bandPattern, studentId, bandPattern], async (avgErr, avgRows) => {
+  if (avgErr) {
+    console.error('Error fetching band averages:', avgErr);
+    avgRows = []; // treat as no peers, continue safely
+  }
+
+      // Compute average raw_score per domain across all matched peers
+      let bandAvgText = `There is not yet enough data from other students in Band ${studentBand} to provide a peer comparison.`;
+
+      if (avgRows && avgRows.length > 0) {
+        const domainTotals = { vocab: 0, pap: 0, writing: 0, lrc: 0 };
+        const domainCounts = { vocab: 0, pap: 0, writing: 0, lrc: 0 };
+
+        avgRows.forEach((row) => {
+          let s;
+          try {
+            s = typeof row.scores === 'string' ? JSON.parse(row.scores) : row.scores;
+          } catch { return; }
+
+          const extract = (field) => parseFloat(
+            (s[field] && s[field].raw_score != null) ? s[field].raw_score : 0
+          ) || 0;
+
+          const vocabScore = extract('vocab');
+          const papScore = extract('pa/phonics');
+          const writingScore = extract('writing');
+          const lrcScore = extract('listening/readingcomprehension');
+
+          if (vocabScore) { domainTotals.vocab += vocabScore; domainCounts.vocab++; }
+          if (papScore) { domainTotals.pap += papScore; domainCounts.pap++; }
+          if (writingScore) { domainTotals.writing += writingScore; domainCounts.writing++; }
+          if (lrcScore) { domainTotals.lrc += lrcScore; domainCounts.lrc++; }
+        });
+
+        const avg = (total, count) => count > 0 ? (total / count).toFixed(1) : 'N/A';
+
+        bandAvgText = `Among ${avgRows.length} other Band ${studentBand} student(s), average scores are: ` +
+          `Vocab ${avg(domainTotals.vocab, domainCounts.vocab)}, ` +
+          `Phonics ${avg(domainTotals.pap, domainCounts.pap)}, ` +
+          `Writing ${avg(domainTotals.writing, domainCounts.writing)}, ` +
+          `Listening ${avg(domainTotals.lrc, domainCounts.lrc)}.`;
+      }
+
+      // enrollment duration
+      const enrollmentDate = new Date(rows[0].date_of_enrollment);
+      const now = new Date();
+      const monthsDiff = (now.getFullYear() - enrollmentDate.getFullYear()) * 12
+        + (now.getMonth() - enrollmentDate.getMonth());
+      const assignedDuration = monthsDiff < 1
+        ? 'less than a month'
+        : monthsDiff === 1 ? '1 month' : `${monthsDiff} months`;
+
+    
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': process.env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 180,
+            messages: [{
+              role: 'user',
+              content: `You are writing a short progress update for a parent dashboard card. Write exactly up to 3  sentences in plain, warm, encouraging language.
+
+Sentence 1: Briefly summarize this child's current literacy strengths based on their scores.
+Sentence 2: Give a warm, balanced comparison to their Band ${studentBand} peers using the real peer averages below. Highlight where this child is doing well relative to peers and gently note any area to keep working on, without causing worry.
+
+Rules:
+- Plain ASCII text only, no markdown, no bullet points, no emoji
+- Keep it warm, supportive, and parent-friendly — not clinical or alarming
+- If there are no peer students yet, skip the comparison and just encourage the child's progress
+
+This child's scores: ${JSON.stringify(studentScores)}
+Overall band: ${rows[0].band}
+Peer average data: ${bandAvgText}`,
+            }],
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeout);
+
+        if (!response.ok) throw new Error(`AI API returned ${response.status}`);
+        const data = await response.json();
+        const summary = data.content.map((c) => c.text || '').join(' ').trim();
+
+        res.json({
+          summary,
+          band: rows[0].band,
+          semester: rows[0].semester,
+          therapistName: rows[0].therapist_name,
+          therapistId: rows[0].therapistid,
+          assignedDuration,
+          enrollmentDate: rows[0].date_of_enrollment,
+          peerCount: avgRows ? avgRows.length : 0,
+          bandAvgText,
+        });
+     } catch (aiError) {
+        console.error('Profile summary AI error FULL:', JSON.stringify(aiError, Object.getOwnPropertyNames(aiError)));
+        res.status(502).json({ error: 'Could not generate summary right now.' });
+      }
+    });
+  });
+});
 // Report generation feature (added) 
 
 const reportCache = new Map();
@@ -482,12 +495,19 @@ setInterval(() => {
     if (entry.expiresAt < now) reportCache.delete(id);
   }
 }, 60 * 1000);
-
 function formatScoreField(field) {
   if (!field) return 'N/A';
   if (typeof field === 'object') {
     return Object.entries(field)
-      .map(([key, val]) => `${key.replace(/_/g, ' ')}: ${val}`)
+      .map(([key, val]) => {
+        let displayVal;
+        try {
+          displayVal = typeof val === 'object' && val !== null ? JSON.stringify(val) : String(val);
+        } catch {
+          displayVal = '[unprintable]';
+        }
+        return `${key.replace(/_/g, ' ')}: ${displayVal}`;
+      })
       .join(', ');
   }
   return field;
@@ -516,17 +536,23 @@ app.post('/reports/parent', async (req, res) => {
       return res.status(404).json({ error: 'No assessment data available for the selected semester.' });
     }
 
-    const parsedRows = rows.map((r) => {
-      const scores = typeof r.scores === 'string' ? JSON.parse(r.scores) : r.scores;
-      return {
-        semester: r.semester,
-        band: r.band,
-        vocab: formatScoreField(scores.vocab),
-        phonics: formatScoreField(scores['pa/phonics']),
-        writing: formatScoreField(scores.writing),
-        listening: formatScoreField(scores['listening/readingcomprehension']),
-      };
-    });
+  let parsedRows;
+try {
+  parsedRows = rows.map((r) => {
+    const scores = typeof r.scores === 'string' ? JSON.parse(r.scores) : r.scores;
+    return {
+      semester: r.semester,
+      band: r.band,
+      vocab: formatScoreField(scores.vocab),
+      phonics: formatScoreField(scores['pa/phonics']),
+      writing: formatScoreField(scores.writing),
+      listening: formatScoreField(scores['listening/readingcomprehension']),
+    };
+  });
+} catch (parseError) {
+  console.error('Error parsing assessment scores:', parseError);
+  return res.status(500).json({ error: 'Corrupted assessment data.' });
+}
 
     let summaryText;
     try {
@@ -589,17 +615,23 @@ app.post('/reports/clinical', async (req, res) => {
       return res.status(404).json({ error: 'No assessment data available for the selected semester.' });
     }
 
-    const parsedRows = rows.map((r) => {
-      const scores = typeof r.scores === 'string' ? JSON.parse(r.scores) : r.scores;
-      return {
-        semester: r.semester,
-        band: r.band,
-        vocab: formatScoreField(scores.vocab),
-        phonics: formatScoreField(scores['pa/phonics']),
-        writing: formatScoreField(scores.writing),
-        listening: formatScoreField(scores['listening/readingcomprehension']),
-      };
-    });
+    let parsedRows;
+    try {
+      parsedRows = rows.map((r) => {
+        const scores = typeof r.scores === 'string' ? JSON.parse(r.scores) : r.scores;
+        return {
+          semester: r.semester,
+          band: r.band,
+          vocab: formatScoreField(scores.vocab),
+          phonics: formatScoreField(scores['pa/phonics']),
+          writing: formatScoreField(scores.writing),
+          listening: formatScoreField(scores['listening/readingcomprehension']),
+        };
+      });
+    } catch (parseError) {
+      console.error('Error parsing assessment scores:', parseError);
+      return res.status(500).json({ error: 'Corrupted assessment data.' });
+    }
 
     let clinicalText;
     try {
@@ -822,83 +854,6 @@ app.post('/communications', (req, res) => {
     });
   });
 });
-app.get('/reports/parent-summary/:studentId', async (req, res) => {
-  const { studentId } = req.params;
-
-  const sql = `
-    SELECT scores, band, semester
-    FROM assessments
-    WHERE studentid = ?
-    ORDER BY semester DESC
-    LIMIT 1
-  `;
-
-  pool.query(sql, [studentId], async (err, rows) => {
-    if (err) {
-      console.error('Error fetching summary data:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-
-    if (!rows || rows.length === 0) {
-      return res.status(404).json({ error: 'No assessment data found' });
-    }
-
-    const row = rows[0];
-    const scores = typeof row.scores === 'string' ? JSON.parse(row.scores) : row.scores;
-
-    const parsedRow = {
-      semester: row.semester,
-      band: row.band,
-      vocab: formatScoreField(scores.vocab),
-      phonics: formatScoreField(scores['pa/phonics']),
-      writing: formatScoreField(scores.writing),
-      listening: formatScoreField(scores['listening/readingcomprehension']),
-    };
-
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000);
-
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 100,
-          messages: [{
-            role: 'user',
-            content: `Write a single encouraging sentence (max 20 words) summarising this child's latest literacy assessment for a parent. No markdown, no punctuation beyond a full stop.
-
-Data: ${JSON.stringify(parsedRow)}`
-          }],
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeout);
-
-      if (!response.ok) throw new Error(`AI API returned ${response.status}`);
-
-      const data = await response.json();
-      const summary = data.content.map((c) => c.text || '').join('').trim();
-
-      return res.status(200).json({ summary, band: row.band });
-    } catch (aiError) {
-      console.error('AI summary error:', aiError);
-      // Fall back to a plain summary if AI fails rather than erroring
-      return res.status(200).json({
-        summary: `Latest assessment: ${parsedRow.semester}, Overall Band ${row.band}.`,
-        band: row.band,
-      });
-    }
-  });
-});
-
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 // for risk assessment to show status
 
@@ -908,7 +863,7 @@ app.get('/api/students/at-risk', async (req, res) => {
 
   try {
     // 1. Get Active Risk Threshold Rules
-    const [rules] = await db.query(
+    const [rules] = await pool.promise().query(
       `SELECT Stagnant_Months_Threshold, Critical_Score_Ceiling, Baseline_Window_Months 
        FROM Risk_Threshold_Configurations ORDER BY Last_Updated DESC LIMIT 1`
     );
@@ -920,7 +875,7 @@ app.get('/api/students/at-risk', async (req, res) => {
     };
 
     // 2. Fetch Students assigned to this Teacher via Profiles
-    const [students] = await db.query(
+    const [students] = await pool.promise().query(
       `SELECT DISTINCT s.Student_ID, s.Enrollment_Date, s.Months_To_48_Months
        FROM Students s
        JOIN Student_Semester_Profiles p ON s.Student_ID = p.Student_ID
@@ -932,7 +887,7 @@ app.get('/api/students/at-risk', async (req, res) => {
     const evaluatedStudents = await Promise.all(
       students.map(async (student) => {
         // Fetch historical scores for this student ordered by assessment date (newest first)
-        const [assessments] = await db.query(
+        const [assessments] = await pool.promise().query(
           `SELECT Mark_Score, Assessment_Date 
            FROM Student_Assessments 
            WHERE Student_ID = ? 
@@ -993,3 +948,86 @@ app.get('/api/students/at-risk', async (req, res) => {
   }
 });
 
+const multer = require('multer');
+const path = require('path');
+
+// Configure disk storage to point to the root 'data' folder
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, 'data')); // Saves directly into the /data folder
+  },
+  filename: function (req, file, cb) {
+    // Keep a clean filename or timestamp it if needed
+    cb(null, file.originalname);
+  }
+});
+
+const upload = multer({ storage: storage });
+
+// 1. POST Endpoint for Single Individual Assessment Entry
+app.post('/assessments/single', async (req, res) => {
+  const { studentId, semester, scores } = req.body;
+
+  if (!studentId || !semester || !scores) {
+    return res.status(400).json({ error: 'Missing required assessment fields.' });
+  }
+
+  try {
+    const [studentCheck] = await pool.promise().query(
+      'SELECT centre FROM students WHERE studentid = ?', 
+      [studentId]
+    );
+
+    if (studentCheck.length === 0) {
+      return res.status(404).json({ error: 'Student ID not found in database.' });
+    }
+
+    const centre = studentCheck[0].centre || 'centre1';
+    const band = req.body.band || 'B'; 
+
+    const sql = `
+      INSERT INTO assessments (studentid, semester, centre, scores, band) 
+      VALUES (?, ?, ?, ?, ?)
+    `;
+
+    await pool.promise().query(sql, [
+      studentId, 
+      semester, 
+      centre, 
+      JSON.stringify(scores), 
+      band
+    ]);
+
+    res.status(200).json({ message: 'Assessment added successfully!' });
+  } catch (err) {
+    console.error('Single Assessment Insert Error:', err);
+    res.status(500).json({ error: 'Failed to save individual assessment.' });
+  }
+});
+
+// 2. POST Endpoint for Bulk File Import (Triggers your Python Ingestion Script)
+app.post('/assessments/bulk-import', upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded.' });
+  }
+
+  const filePath = req.file.path;
+  // Corrected from 'child_path' to 'child_process'
+  const { exec } = require('child_process');
+
+  exec(`python3 ingest.py --file ${filePath}`, { cwd: '/app' }, (error, stdout, stderr) => {
+    const fs = require('fs');
+    fs.unlink(filePath, () => {}); // Clean up temporary file
+
+    if (error) {
+      console.error('Bulk Import Exec Error:', error);
+      console.error('Python STDERR:', stderr);
+      return res.status(500).json({ error: `Failed to process bulk upload script: ${stderr || error.message}` });
+    }
+
+    res.status(200).json({ message: 'Mass file imported successfully!' });
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
