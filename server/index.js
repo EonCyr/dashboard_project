@@ -950,15 +950,22 @@ app.get('/api/students/at-risk', async (req, res) => {
 
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs'); // Ensure fs is imported
 
-// Configure disk storage to point to the root 'data' folder
+// 1. Explicitly create the directory BEFORE multer initializes
+const uploadDir = path.join(__dirname, 'data');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// 2. Configure disk storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, 'data')); // Saves directly into the /data folder
+    cb(null, uploadDir); // Now it safely writes to /app/data
   },
   filename: function (req, file, cb) {
-    // Keep a clean filename or timestamp it if needed
-    cb(null, file.originalname);
+    // Pro-tip: Add a timestamp so simultaneous uploads don't overwrite each other
+    cb(null, Date.now() + '-' + file.originalname);
   }
 });
 
@@ -1006,18 +1013,19 @@ app.post('/assessments/single', async (req, res) => {
 });
 
 // 2. POST Endpoint for Bulk File Import (Triggers your Python Ingestion Script)
+
 app.post('/assessments/bulk-import', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded.' });
   }
 
-  const filePath = req.file.path;
-  // Corrected from 'child_path' to 'child_process'
+  const filePath = req.file.path; 
   const { exec } = require('child_process');
 
-  exec(`python3 ingest.py --file ${filePath}`, { cwd: '/app' }, (error, stdout, stderr) => {
+  // Executes Python using the absolute path mapped in docker-compose
+  exec(`python3 /app/ingestor/ingest.py --file "${filePath}"`, (error, stdout, stderr) => {
     const fs = require('fs');
-    fs.unlink(filePath, () => {}); // Clean up temporary file
+    fs.unlink(filePath, () => {}); // Clean up temporary file after processing
 
     if (error) {
       console.error('Bulk Import Exec Error:', error);
