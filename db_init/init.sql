@@ -121,61 +121,61 @@ ON DUPLICATE KEY UPDATE Band=VALUES(Band);
 
 -- Dummy data for testing with the new schema
 INSERT IGNORE INTO users (userid, username, password, email, phone_number, role) VALUES
-(1, 'therapist1', 'pw123', 'therapist1@example.com', '11111111', 'therapist'),
-(2, 'parent1', 'pw123', 'parent1@example.com', '22222222', 'parent'),
-(3, 'parent2', 'pw123', 'parent2@example.com', '33333333', 'parent'),
-(4, 'parent3', 'pw123', 'parent3@example.com', '44444444', 'parent');
+(20000, 'therapist1', 'pw123', 'therapist1@example.com', '11111111', 'therapist'),
+(20001, 'parent1', 'pw123', 'parent1@example.com', '22222222', 'parent'),
+(20002, 'parent2', 'pw123', 'parent2@example.com', '33333333', 'parent'),
+(20003, 'parent3', 'pw123', 'parent3@example.com', '44444444', 'parent');
 
 INSERT IGNORE INTO therapists (userid, centre) VALUES
-(1, 'centre1');
+(20000, 'centre1');
 
 INSERT IGNORE INTO parents (userid) VALUES
-(2),
-(3),
-(4);
+(20001),
+(20002),
+(20003);
 
 INSERT IGNORE INTO students (studentid, name, age, current_band, date_of_enrollment, centre, school) VALUES
-(1, 'Alice', 7, 'A', '2024-01-15', 'centre1', 'School1'),
-(2, 'Bob', 8, 'B', '2024-02-01', 'centre1', 'School2'),
-(3, 'Charlie', 6, 'C', '2024-03-10', 'centre1', 'School3');
+(20001, 'Alice', 7, 'A', '2024-01-15', 'centre1', 'School1'),
+(20002, 'Bob', 8, 'B', '2024-02-01', 'centre1', 'School2'),
+(20003, 'Charlie', 6, 'C', '2024-03-10', 'centre1', 'School3');
 
 INSERT IGNORE INTO student_profile (studentid, date_of_birth, school_level, months_to_48) VALUES
-(1, '2019-05-01', 'Year 2', 18),
-(2, '2018-11-12', 'Year 3', 24),
-(3, '2020-02-20', 'Year 1', 12);
+(20001, '2019-05-01', 'Year 2', 18),
+(20002, '2018-11-12', 'Year 3', 24),
+(20003, '2020-02-20', 'Year 1', 12);
 
 INSERT IGNORE INTO therapist_student (therapistid, studentid) VALUES
-(1, 1),
-(1, 2),
-(1, 3);
+(20000, 20001),
+(20000, 20002),
+(20000, 20003);
 
 INSERT IGNORE INTO parent_student (parentid, studentid, relationship) VALUES
-(2, 1, 'Mother'),
-(3, 2, 'Father'),
-(4, 3, 'Guardian');
+(20001, 20001, 'Mother'),
+(20002, 20002, 'Father'),
+(20003, 20003, 'Guardian');
 
 -- INSERT IGNORE INTO assessments (assessmentid, therapistid, studentid, semester, centre, scores, band) VALUES
--- (1, 1, 1, '2022 Sem 1', 'centre1', '{"vocab":"A","pa/phonics":"B","writing":"A","listening/readingcomprehension":"A"}', 'A'),
--- (2, 1, 2, '2022 Sem 2', 'centre1', '{"vocab":"B","pa/phonics":"C","writing":"B","listening/readingcomprehension":"B"}', 'B'),
--- (3, 1, 3, '2023 Sem 1', 'centre1', '{"vocab":"C","pa/phonics":"B","writing":"C","listening/readingcomprehension":"B"}', 'B');
+-- (1, 20000, 20001, '2022 Sem 1', 'centre1', '{"vocab":"A","pa/phonics":"B","writing":"A","listening/readingcomprehension":"A"}', 'A'),
+-- (2, 20000, 20002, '2022 Sem 2', 'centre1', '{"vocab":"B","pa/phonics":"C","writing":"B","listening/readingcomprehension":"B"}', 'B'),
+-- (3, 20000, 20003, '2023 Sem 1', 'centre1', '{"vocab":"C","pa/phonics":"B","writing":"C","listening/readingcomprehension":"B"}', 'B');
 
 
  INSERT IGNORE INTO assessments (assessmentid, therapistid, studentid, semester, centre, scores, band) VALUES
- (1, 1, 1, '2022 Sem 1', 'centre1',
+ (20000, 20000, 20001, '2022 Sem 1', 'centre1',
    '{"vocab":{"band":"B+","raw_score":78},"pa/phonics":{"band":"B","raw_score":72},"writing":{"band":"B","raw_score":70},"listening/readingcomprehension":{"band":"B-","raw_score":68}}',
   'B'),
 
- (2, 1, 1, '2022 Sem 2', 'centre1',
+ (20001, 20000, 20002, '2022 Sem 2', 'centre1',
    '{"vocab":{"band":"A-","raw_score":85},"pa/phonics":{"band":"A-","raw_score":83},"writing":{"band":"B+","raw_score":78},"listening/readingcomprehension":{"band":"B","raw_score":74}}',
    'B+'),
- (3, 1, 1, '2023 Sem 1', 'centre1',
+ (20002, 20000, 20003, '2023 Sem 1', 'centre1',
    '{"vocab":{"band":"A+","raw_score":95},"pa/phonics":{"band":"A","raw_score":90},"writing":{"band":"A","raw_score":88},"listening/readingcomprehension":{"band":"A-","raw_score":85}}',
    'A'),
- (4, 1, 2, '2022 Sem 1', 'centre1',
+ (20003, 20000, 20002, '2022 Sem 1', 'centre1',
    '{"vocab":{"band":"C","raw_score":55},"pa/phonics":{"band":"C-","raw_score":50},"writing":{"band":"C","raw_score":52},"listening/readingcomprehension":{"band":"D+","raw_score":45}}',
    'C-'),
- (5, 1, 2, '2022 Sem 2', 'centre1',
+ (20004, 20000, 20002, '2022 Sem 2', 'centre1',
   '{"vocab":{"band":"B","raw_score":68},"pa/phonics":{"band":"C+","raw_score":58},"writing":{"band":"B-","raw_score":60},"listening/readingcomprehension":{"band":"C","raw_score":52}}',
   'C+'),
- (6, 1, 3, '2023 Sem 1', 'centre1',
+ (20005, 20000, 20003, '2023 Sem 1', 'centre1',
   '{"vocab":{"band":"C+","raw_score":58},"pa/phonics":{"band":"C","raw_score":54},"writing":{"band":"D+","raw_score":45},"listening/readingcomprehension":{"band":"C","raw_score":52}}',  'C-');
