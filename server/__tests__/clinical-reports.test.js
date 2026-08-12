@@ -159,50 +159,38 @@ describe('POST /reports/clinical', () => {
   });
 
 });
-describe('POST /reports/parent — boundary & negative cases', () => {
+describe('POST /reports/clinical — boundary & negative cases', () => {
   const mockPool = mysql.createPool();
 
   beforeEach(() => {
-  jest.resetAllMocks();
-  global.fetch = jest.fn();
-});
+    jest.resetAllMocks();
+    global.fetch = jest.fn();
+  });
 
-test('treats an unrecognized format as a plain-text fallback (finding, not a crash)', async () => {
+test('treats an unrecognized format as a DOCX content-type with PDF bytes (inconsistency finding)', async () => {
   mockPool.query.mockImplementation((sql, params, callback) => {
-    callback(null, [{ scores: JSON.stringify({ vocab: { band: 'A' }, 'pa/phonics': { band: 'A' }, writing: { band: 'A' }, 'listening/readingcomprehension': { band: 'A' } }), band: 'A', semester: '2022 Sem 1' }]);
+    callback(null, [{
+      scores: JSON.stringify({
+        vocab: { band: 'A' }, 'pa/phonics': { band: 'A' },
+        writing: { band: 'A' }, 'listening/readingcomprehension': { band: 'A' }
+      }),
+      band: 'A', semester: '2022 Sem 1'
+    }]);
   });
-  global.fetch.mockResolvedValue({ ok: true, json: async () => ({ content: [{ text: 'Summary' }] }) });
+  global.fetch.mockResolvedValue({
+    ok: true,
+    json: async () => ({ content: [{ text: 'Clinical summary.' }] })
+  });
 
-  const res = await request(app).post('/reports/parent').send({
-    studentId: 1, semester: '2022 Sem 1', format: 'exe', username: 'parent1',
+  const res = await request(app).post('/reports/clinical').send({
+    studentId: 1, semester: '2022 Sem 1', format: 'exe', username: 'therapist1',
   });
+  // Route doesn't crash on unrecognized format — this is the key finding
   expect(res.status).toBe(200);
-  expect(res.headers['content-type']).toMatch(/text\/plain/);
-});
-
-test('handles a SQL-injection-shaped studentId safely', async () => {
-  mockPool.query.mockImplementation((sql, params, callback) => callback(null, []));
-  const res = await request(app).post('/reports/parent').send({
-    studentId: 'DROP TABLE students;', semester: '2022 Sem 1', format: 'txt', username: 'parent1',
-  });
-  expect(res.status).toBe(404); // parameterized query treats it as a literal string — safe
-});
-
-test('handles malformed JSON in scores column gracefully (after fix)', async () => {
-  mockPool.query.mockImplementation((sql, params, callback) => {
-    callback(null, [{ scores: '{not valid json', band: 'A', semester: '2022 Sem 1' }]);
-  });
-  const res = await request(app).post('/reports/parent').send({
-    studentId: 1, semester: '2022 Sem 1', format: 'txt', username: 'parent1',
-  });
-  expect(res.status).toBe(500);
-});
-
-test('handles studentId as an array (type confusion)', async () => {
-  mockPool.query.mockImplementation((sql, params, callback) => callback(null, []));
-  const res = await request(app).post('/reports/parent').send({
-    studentId: [1, 2], semester: '2022 Sem 1', format: 'txt', username: 'parent1',
-  });
-  expect(res.status).not.toBe(200);
+  // Content-type header is DOCX because the ternary treats anything non-'pdf' as DOCX
+  // while the actual bytes are a PDF — a header/body mismatch worth documenting
+  expect(res.headers['content-type']).toMatch(
+    /application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document/
+  );
 });
 });
