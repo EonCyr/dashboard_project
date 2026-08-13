@@ -96,8 +96,8 @@ export default function AddAssessmentModal({ isOpen, onClose, onSuccess , curren
         {activeTab === 'individual' ? (
           <form onSubmit={handleIndividualSubmit} className="assessment-form">
             <div className="form-row">
-              <div className="form-group"><label>Student ID</label>
-                <input type="text" value={formData.studentId} onChange={(e) => setFormData({...formData, studentId: e.target.value})} required />
+              <div className="form-group"><label htmlFor="student-id">Student ID</label>
+                <input id="student-id" type="text" value={formData.studentId} onChange={(e) => setFormData({...formData, studentId: e.target.value})} required />
               </div>
               <div className="form-group"><label>Semester</label>
                 <input type="text" placeholder="2026 Sem 1" value={formData.semester} onChange={(e) => setFormData({...formData, semester: e.target.value})} required />

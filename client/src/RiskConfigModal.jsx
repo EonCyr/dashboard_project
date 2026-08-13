@@ -28,7 +28,7 @@ export default function RiskConfigModal({ isOpen, onClose, username, onSaveSucce
             }));
           }
         })
-        .catch(() => {
+        .catch((err) => {
         if (err.name === 'AbortError') return; // Silence test unmount cancellations
         if (isMounted) {
           setStatusMessage({ text: 'Loaded default threshold settings.', type: 'info' });
