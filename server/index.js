@@ -216,25 +216,40 @@ app.route('/relationships')
             const therapistId = userRows[0].userid;
             const verifySql = 'SELECT 1 FROM therapist_student WHERE therapistid = ? AND studentid = ?';
 
-            pool.query(verifySql, [therapistId, studentid], (verifyErr) => {
+            pool.query(verifySql, [therapistId, studentid], (verifyErr, verifyRows) => {
                 if (verifyErr) {
                     console.error('Error verifying therapist assignment:', verifyErr);
                     return res.status(500).json({ error: 'Failed to verify access' });
                 }
+                if (!verifyRows.length) {
+                    return res.status(403).json({ error: 'This student is not associated with your account.', code: 'STUDENT_NOT_RELATED' });
+                }
+
+                const parentLookupSql = 'SELECT userid FROM parents WHERE userid = ?';
+
+                pool.query(parentLookupSql, [parentid], (parentErr, parentRows) => {
+                  if (parentErr) {
+                      console.error('Error verifying parent account:', parentErr);
+                      return res.status(500).json({ error: 'Failed to verify parent account' });
+                  }
+                  if (!parentRows.length) {
+                      return res.status(404).json({ error: 'No parent account exists with that ID.', code: 'PARENT_NOT_FOUND' });
+                  }
 
                 const insertSql = `
-                    INSERT INTO parent_student (parentid, studentid, relationship)
-                    VALUES (?, ?, ?)
-                    ON DUPLICATE KEY UPDATE relationship = VALUES(relationship)
+                  INSERT INTO parent_student (parentid, studentid, relationship)
+                  VALUES (?, ?, ?)
+                  ON DUPLICATE KEY UPDATE relationship = VALUES(relationship)
                 `;
 
                 pool.query(insertSql, [parentid, studentid, relationship || 'Parent'], (insertErr) => {
-                    if (insertErr) {
-                        console.error('Error creating relationship:', insertErr);
-                        return res.status(500).json({ error: 'Failed to create relationship' });
-                    }
-                    res.json({ message: 'Relationship added successfully' });
+                  if (insertErr) {
+                    console.error('Error creating relationship:', insertErr);
+                    return res.status(500).json({ error: 'Failed to create relationship' });
+                  }
+                  res.json({ message: 'Relationship added successfully' });
                 });
+              });
             });
         });
     })
@@ -260,10 +275,13 @@ app.route('/relationships')
             const therapistId = userRows[0].userid;
             const verifySql = 'SELECT 1 FROM therapist_student WHERE therapistid = ? AND studentid = ?';
 
-            pool.query(verifySql, [therapistId, studentid], (verifyErr) => {
+            pool.query(verifySql, [therapistId, studentid], (verifyErr, verifyRows) => {
                 if (verifyErr) {
                     console.error('Error verifying therapist assignment:', verifyErr);
                     return res.status(500).json({ error: 'Failed to verify access' });
+                }
+                if (!verifyRows.length) {
+                    return res.status(403).json({ error: 'This student is not associated with your account.', code: 'STUDENT_NOT_RELATED' });
                 }
 
                 const deleteSql = 'DELETE FROM parent_student WHERE parentid = ? AND studentid = ?';
