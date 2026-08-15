@@ -1039,4 +1039,3 @@ module.exports = {
   compileClinicalReport,
 };
 
-module.exports = { app, pool };
