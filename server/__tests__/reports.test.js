@@ -1,12 +1,11 @@
 
 const request = require('supertest');
 
-// Mock mysql2 before requiring app.js, so app.js gets the mocked pool
 jest.mock('mysql2', () => {
   const mockPool = {
     query: jest.fn((sql, ...args) => {
       const cb = args[args.length - 1];
-      if (typeof cb === 'function') cb(null, []); // default: succeed with empty results
+      if (typeof cb === 'function') cb(null, []);
     }),
     promise: jest.fn(() => ({ query: jest.fn() })),
   };
@@ -155,5 +154,19 @@ test('handles studentId as an array (type confusion)', async () => {
     studentId: [1, 2], semester: '2022 Sem 1', format: 'txt', username: 'parent1',
   });
   expect(res.status).not.toBe(200);
+});
+test('handles empty string semester (boundary case)', async () => {
+  const res = await request(app).post('/reports/parent').send({
+    studentId: 1, semester: '', format: 'txt', username: 'parent1',
+  });
+  expect(res.status).toBe(400);
+});
+
+test('handles very long semester string without crashing (boundary case)', async () => {
+  mockPool.query.mockImplementation((sql, params, callback) => callback(null, []));
+  const res = await request(app).post('/reports/parent').send({
+    studentId: 1, semester: 'A'.repeat(500), format: 'txt', username: 'parent1',
+  });
+  expect(res.status).toBe(404);
 });
 });

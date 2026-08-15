@@ -1,5 +1,15 @@
 
 const { formatScoreField, compileReport } = require('../app');
+jest.mock('mysql2', () => {
+  const mockPool = {
+    query: jest.fn((sql, ...args) => {
+      const cb = args[args.length - 1];
+      if (typeof cb === 'function') cb(null, []);
+    }),
+    promise: jest.fn(() => ({ query: jest.fn() })),
+  };
+  return { createPool: jest.fn(() => mockPool) };
+});
 
 describe('formatScoreField', () => {
   test('returns N/A for null/undefined', () => {
