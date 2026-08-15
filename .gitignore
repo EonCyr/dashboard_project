@@ -23,3 +23,9 @@ Thumbs.db
 dist/
 build/
 
+# Cypress run artifacts 
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+cypress/fixtures/generated/
+

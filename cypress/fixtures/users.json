@@ -1,0 +1,41 @@
+{
+  "_note": "All entries here are seeded fresh by cypress/support/db-tasks.js#seedFixtures. Usernames use a 'cypress_' prefix on purpose: this dev database is shared/persistent and already has real users named 'therapist1'/'parent1' etc. with different passwords, so a plain, unprefixed username silently collides via INSERT IGNORE and login fails against the wrong (pre-existing) row. Do not remove the prefix without also guaranteeing no pre-existing row can ever share the name.",
+  "therapist1": {
+    "username": "cypress_therapist1",
+    "password": "pw123",
+    "role": "therapist",
+    "userid": 900001,
+    "rosterStudentId": 900001,
+    "secondRosterStudentId": 900003
+  },
+  "therapist2": {
+    "username": "cypress_therapist2",
+    "password": "pw123",
+    "role": "therapist",
+    "userid": 900002,
+    "rosterStudentId": 900002,
+    "note": "Disjoint roster from therapist1 — used for cross-tenant RBAC checks."
+  },
+  "parent1": {
+    "username": "cypress_parent1",
+    "password": "pw123",
+    "role": "parent",
+    "userid": 900011,
+    "studentId": 900001
+  },
+  "parentUnlinked": {
+    "username": "cypress_parent_unlinked",
+    "password": "pw123",
+    "role": "parent",
+    "userid": 900012,
+    "note": "Seeded with no parent_student row."
+  },
+  "parentEmpty": {
+    "username": "cypress_parent_empty",
+    "password": "pw123",
+    "role": "parent",
+    "userid": 900020,
+    "studentId": 900005,
+    "note": "Student 900005 has zero assessments."
+  }
+}

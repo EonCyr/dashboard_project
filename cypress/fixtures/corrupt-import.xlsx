@@ -1,0 +1,4 @@
+This is not a real spreadsheet — plain text saved with an .xlsx extension, used by
+08_data_import.cy.js to exercise the "corrupt/unreadable file" alt flow (3a-3c).
+pandas.read_excel() in ingestor/ingest.py cannot parse this and will raise, which the
+server's child_process.exec() surfaces as a 500 on POST /assessments/bulk-import.
