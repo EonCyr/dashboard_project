@@ -6,7 +6,9 @@
   "scripts": {
     "test": "jest",
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "fuzz": "node scripts/fuzz-longrun.js 30",
+    "fuzz:soak": "node scripts/fuzz-longrun.js 86400"
   },
   "keywords": [],
   "author": "",
