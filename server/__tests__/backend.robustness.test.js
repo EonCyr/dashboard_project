@@ -149,9 +149,7 @@ describe('Backend Robustness & Edge Case Suite', () => {
     });
   });
 
-  /* -------------------------------------------------------------------------- */
   /*  3. Assessment Entries & File Uploads (/assessments)                       */
-  /* -------------------------------------------------------------------------- */
   describe('/assessments Edge Cases', () => {
     it('returns 404 when adding single assessment for non-existent student', async () => {
       // Mock student check returning empty rows
@@ -177,9 +175,7 @@ describe('Backend Robustness & Edge Case Suite', () => {
     });
   });
 
-  /* -------------------------------------------------------------------------- */
   /*  4. AI & Report Generation Timeout & Corruption Handling                    */
-  /* -------------------------------------------------------------------------- */
   describe('/reports/parent-summary Robustness', () => {
     it('returns 500 when assessment scores column contains corrupted non-JSON strings', async () => {
       const mockCorruptedRow = [{

@@ -32,22 +32,30 @@ const connectWithRetry = () => {
 connectWithRetry();
 
 // 1. GET Endpoint for risk
-app.get('/config/risk', async (req, res) => {
+app.get(['/config/risk', '/api/config/risk'], async (req, res) => {
   try {
     const [rows] = await pool.promise().query(
-      `SELECT Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months 
-       FROM Risk_Threshold_Configurations ORDER BY Last_Updated DESC LIMIT 1`
+      `SELECT Band, Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months 
+       FROM Risk_Threshold_Configurations`
     );
     
-    if (rows.length > 0) {
-      res.status(200).json({
-        critical_score: rows[0].Critical_Score_Ceiling,
-        moderate_score: rows[0].Moderate_Score_Ceiling,
-        high_performer_score: rows[0].High_Performer_Benchmark,
-        baseline_window: rows[0].Baseline_Window_Months
+    if (rows && rows.length > 0) {
+      const responseData = {};
+      rows.forEach((row) => {
+        responseData[row.Band] = {
+          critical_score: row.Critical_Score_Ceiling,
+          moderate_score: row.Moderate_Score_Ceiling,
+          high_performer_score: row.High_Performer_Benchmark,
+          baseline_window: row.Baseline_Window_Months
+        };
       });
+      res.status(200).json(responseData);
     } else {
-      res.status(200).json({ critical_score: 20, moderate_score: 25, high_performer_score: 28, baseline_window: 2 });
+      res.status(200).json({
+        A: { critical_score: 22, moderate_score: 26, high_performer_score: 29, baseline_window: 2 },
+        B: { critical_score: 20, moderate_score: 25, high_performer_score: 28, baseline_window: 2 },
+        C: { critical_score: 18, moderate_score: 22, high_performer_score: 25, baseline_window: 2 }
+      });
     }
   } catch (err) {
     console.error('Fetch Risk Config Error:', err);
@@ -56,24 +64,33 @@ app.get('/config/risk', async (req, res) => {
 });
 
 // 2. PUT Endpoint for risk
-app.put('/config/risk', async (req, res) => {
-  const { criticalScore, moderateScore, highPerformerScore, baselineWindow } = req.body;
+app.put(['/config/risk', '/api/config/risk'], async (req, res) => {
+  const { band, criticalScore, moderateScore, highPerformerScore, baselineWindow } = req.body;
 
   if (Number(criticalScore) >= Number(moderateScore) || Number(moderateScore) >= Number(highPerformerScore)) {
     return res.status(400).json({ error: 'Validation Error: Critical < Moderate < High Performer.' });
   }
+  const targetBand = (band || 'B').toUpperCase();
   try {
-    await pool.promise().query(
-      `INSERT INTO Risk_Threshold_Configurations 
-       (Configuration_ID, Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months)
-       VALUES (1, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE 
-       Critical_Score_Ceiling = VALUES(Critical_Score_Ceiling),
-       Moderate_Score_Ceiling = VALUES(Moderate_Score_Ceiling),
-       High_Performer_Benchmark = VALUES(High_Performer_Benchmark),
-       Baseline_Window_Months = VALUES(Baseline_Window_Months)`,
-      [criticalScore, moderateScore, highPerformerScore, baselineWindow]
-    );
+   const sql = `
+      INSERT INTO Risk_Threshold_Configurations 
+      (Band, Critical_Score_Ceiling, Moderate_Score_Ceiling, High_Performer_Benchmark, Baseline_Window_Months)
+      VALUES (?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE 
+      Critical_Score_Ceiling = VALUES(Critical_Score_Ceiling),
+      Moderate_Score_Ceiling = VALUES(Moderate_Score_Ceiling),
+      High_Performer_Benchmark = VALUES(High_Performer_Benchmark),
+      Baseline_Window_Months = VALUES(Baseline_Window_Months),
+      Last_Updated = NOW()
+    `;
+
+    await pool.promise().query(sql, [
+      targetBand,
+      Number(criticalScore),
+      Number(moderateScore),
+      Number(highPerformerScore),
+      Number(baselineWindow)
+    ]);
 
     res.status(200).json({ message: 'Updated performance metrics successfully saved.' });
   } catch (err) {
