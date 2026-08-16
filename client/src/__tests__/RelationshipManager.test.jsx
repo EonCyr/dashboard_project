@@ -62,6 +62,29 @@ test('loads and displays relationships when opened', async () => {
   expect(await screen.findByText(/Student 10.*Parent 20.*Mother/)).toBeInTheDocument();
 });
 
+test('shows N/A and No relationship when a student has no assigned parent or guardian', async () => {
+  mockFetchSequence([
+    {
+      ok: true,
+      body: [{ studentid: 42, parentid: null, relationship: null }],
+    },
+  ]);
+
+  render(
+    <RelationshipManagerModal
+      isOpen={true}
+      onClose={noop}
+      username="therapist1"
+      isLoading={false}
+      setIsLoading={setIsLoading}
+    />
+  );
+
+  expect(
+    await screen.findByText(/Student 42.*Parent N\/A.*No relationship/)
+  ).toBeInTheDocument();
+});
+
 test('shows error when student or parent id is missing', async () => {
   mockFetchSequence([{ ok: true, body: [] }]); // initial load on open
 
