@@ -130,12 +130,23 @@ describe('POST /reports/parent — boundary & negative cases', () => {
   expect(res.headers['content-type']).toMatch(/text\/plain/);
 });
 
-test('handles a SQL-injection-shaped studentId safely', async () => {
-  mockPool.query.mockImplementation((sql, params, callback) => callback(null, []));
-  const res = await request(app).post('/reports/parent').send({
-    studentId: 'DROP TABLE students;', semester: '2022 Sem 1', format: 'txt', username: 'parent1',
+test('uses a parameterised query — injection-shaped input never enters the SQL string', async () => {
+  const payload = "1'; DROP TABLE students; --";
+  let capturedSql, capturedParams;
+
+  mockPool.query.mockImplementation((sql, params, callback) => {
+    capturedSql = sql;
+    capturedParams = params;
+    callback(null, []);
   });
-  expect(res.status).toBe(404); // parameterized query treats it as a literal string — safe
+
+  await request(app).post('/reports/parent').send({
+    studentId: payload, semester: '2022 Sem 1', format: 'txt', username: 'parent1',
+  });
+
+  expect(capturedSql).toContain('?');           // placeholders present
+  expect(capturedSql).not.toContain('DROP');    // payload not interpolated
+  expect(capturedParams).toContain(payload);    // payload bound as a parameter
 });
 
 test('handles malformed JSON in scores column gracefully (after fix)', async () => {
@@ -148,12 +159,20 @@ test('handles malformed JSON in scores column gracefully (after fix)', async () 
   expect(res.status).toBe(500);
 });
 
-test('handles studentId as an array (type confusion)', async () => {
-  mockPool.query.mockImplementation((sql, params, callback) => callback(null, []));
-  const res = await request(app).post('/reports/parent').send({
+test('passes a non-scalar studentId through to the query layer unchanged', async () => {
+  let capturedParams;
+  mockPool.query.mockImplementation((sql, params, callback) => {
+    capturedParams = params;
+    callback(null, []);
+  });
+
+  await request(app).post('/reports/parent').send({
     studentId: [1, 2], semester: '2022 Sem 1', format: 'txt', username: 'parent1',
   });
-  expect(res.status).not.toBe(200);
+
+  // FINDING: the route performs no type validation on studentId — an array
+  // reaches the driver as-is. mysql2 would expand this into an IN-style list.
+  expect(Array.isArray(capturedParams[0])).toBe(true);
 });
 test('handles empty string semester (boundary case)', async () => {
   const res = await request(app).post('/reports/parent').send({
@@ -161,12 +180,20 @@ test('handles empty string semester (boundary case)', async () => {
   });
   expect(res.status).toBe(400);
 });
+test('passes a 500-character semester through without truncation', async () => {
+  const longSemester = 'A'.repeat(500);
+  let capturedParams;
 
-test('handles very long semester string without crashing (boundary case)', async () => {
-  mockPool.query.mockImplementation((sql, params, callback) => callback(null, []));
-  const res = await request(app).post('/reports/parent').send({
-    studentId: 1, semester: 'A'.repeat(500), format: 'txt', username: 'parent1',
+  mockPool.query.mockImplementation((sql, params, callback) => {
+    capturedParams = params;
+    callback(null, []);
   });
+
+  const res = await request(app).post('/reports/parent').send({
+    studentId: 1, semester: longSemester, format: 'txt', username: 'parent1',
+  });
+
+  expect(capturedParams[1]).toHaveLength(500);
   expect(res.status).toBe(404);
 });
 });

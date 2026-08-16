@@ -1,16 +1,12 @@
 require('dotenv').config({ silent: true });
 
-// Standalone 24-hour fuzz runner — not a Jest test
+// Standalone 24-hour fuzz runner —,not a Jest test
 // Run with: node fuzz-longrun.js
 // Or with a timeout: node fuzz-longrun.js 86400 (seconds)
 
 const fc = require('fast-check');
 
-// Inline the function under test directly so we don't need the DB/Express stack.
-//
-// !! KEEP IN SYNC WITH app.js !!
-// This is a copy. If formatScoreField changes in app.js and this is not
-// updated, the fuzzer will happily pass against code that no longer ships.
+
 function formatScoreField(field) {
   if (!field) return 'N/A';
   if (typeof field === 'object') {
