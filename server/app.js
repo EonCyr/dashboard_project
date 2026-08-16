@@ -216,25 +216,40 @@ app.route('/relationships')
             const therapistId = userRows[0].userid;
             const verifySql = 'SELECT 1 FROM therapist_student WHERE therapistid = ? AND studentid = ?';
 
-            pool.query(verifySql, [therapistId, studentid], (verifyErr) => {
+            pool.query(verifySql, [therapistId, studentid], (verifyErr, verifyRows) => {
                 if (verifyErr) {
                     console.error('Error verifying therapist assignment:', verifyErr);
                     return res.status(500).json({ error: 'Failed to verify access' });
                 }
+                if (!verifyRows.length) {
+                    return res.status(403).json({ error: 'This student is not associated with your account.', code: 'STUDENT_NOT_RELATED' });
+                }
+
+                const parentLookupSql = 'SELECT userid FROM parents WHERE userid = ?';
+
+                pool.query(parentLookupSql, [parentid], (parentErr, parentRows) => {
+                  if (parentErr) {
+                      console.error('Error verifying parent account:', parentErr);
+                      return res.status(500).json({ error: 'Failed to verify parent account' });
+                  }
+                  if (!parentRows.length) {
+                      return res.status(404).json({ error: 'No parent account exists with that ID.', code: 'PARENT_NOT_FOUND' });
+                  }
 
                 const insertSql = `
-                    INSERT INTO parent_student (parentid, studentid, relationship)
-                    VALUES (?, ?, ?)
-                    ON DUPLICATE KEY UPDATE relationship = VALUES(relationship)
+                  INSERT INTO parent_student (parentid, studentid, relationship)
+                  VALUES (?, ?, ?)
+                  ON DUPLICATE KEY UPDATE relationship = VALUES(relationship)
                 `;
 
                 pool.query(insertSql, [parentid, studentid, relationship || 'Parent'], (insertErr) => {
-                    if (insertErr) {
-                        console.error('Error creating relationship:', insertErr);
-                        return res.status(500).json({ error: 'Failed to create relationship' });
-                    }
-                    res.json({ message: 'Relationship added successfully' });
+                  if (insertErr) {
+                    console.error('Error creating relationship:', insertErr);
+                    return res.status(500).json({ error: 'Failed to create relationship' });
+                  }
+                  res.json({ message: 'Relationship added successfully' });
                 });
+              });
             });
         });
     })
@@ -260,10 +275,13 @@ app.route('/relationships')
             const therapistId = userRows[0].userid;
             const verifySql = 'SELECT 1 FROM therapist_student WHERE therapistid = ? AND studentid = ?';
 
-            pool.query(verifySql, [therapistId, studentid], (verifyErr) => {
+            pool.query(verifySql, [therapistId, studentid], (verifyErr, verifyRows) => {
                 if (verifyErr) {
                     console.error('Error verifying therapist assignment:', verifyErr);
                     return res.status(500).json({ error: 'Failed to verify access' });
+                }
+                if (!verifyRows.length) {
+                    return res.status(403).json({ error: 'This student is not associated with your account.', code: 'STUDENT_NOT_RELATED' });
                 }
 
                 const deleteSql = 'DELETE FROM parent_student WHERE parentid = ? AND studentid = ?';
@@ -323,7 +341,7 @@ console.log('ANTHROPIC_API_KEY present:', !!process.env.ANTHROPIC_API_KEY);
 app.get('/reports/parent-summary/:studentId', async (req, res) => {
   const { studentId } = req.params;
 
-const studentSql = `
+  const studentSql = `
     SELECT 
       a.scores, a.band, a.semester,
       u.username AS therapist_name,
@@ -338,6 +356,7 @@ const studentSql = `
     ORDER BY a.semester DESC
     LIMIT 1
   `;
+
   pool.query(studentSql, [studentId], async (err, rows) => {
     if (err) {
       console.error('Error fetching summary data:', err);
@@ -361,18 +380,18 @@ const studentSql = `
 
     // Pull the latest assessment per student whose band starts with the same letter
     const avgSql = `
-       SELECT a.scores
-        FROM assessments a
-        INNER JOIN (
-          SELECT studentid, MAX(semester) AS latest_semester
-          FROM assessments
-          GROUP BY studentid
-        ) latest ON a.studentid = latest.studentid AND a.semester = latest.latest_semester
-        WHERE a.studentid != ?
-    `;
-    
-
-    pool.query(avgSql, [studentId], async (avgErr, avgRows) => {
+          SELECT a.scores
+             FROM assessments a
+             INNER JOIN (
+               SELECT studentid, MAX(semester) AS latest_semester
+               FROM assessments
+               GROUP BY studentid
+             ) latest ON a.studentid = latest.studentid AND a.semester = latest.latest_semester
+             WHERE a.studentid != ?
+         `;
+         
+     
+         pool.query(avgSql, [studentId], async (avgErr, avgRows) => {
   if (avgErr) {
     console.error('Error fetching band averages:', avgErr);
     avgRows = []; // treat as no peers, continue safely
@@ -465,7 +484,7 @@ Peer average data: ${bandAvgText}`,
         const data = await response.json();
         const summary = data.content.map((c) => c.text || '').join(' ').trim();
 
-     res.json({
+      res.json({
         summary,
         band: rows[0].band,
         semester: rows[0].semester,
@@ -477,8 +496,7 @@ Peer average data: ${bandAvgText}`,
         peerCount: avgRows ? avgRows.length : 0,
         bandAvgText,
       });
-        
-      } catch (aiError) {
+     } catch (aiError) {
         console.error('Profile summary AI error FULL:', JSON.stringify(aiError, Object.getOwnPropertyNames(aiError)));
         res.status(502).json({ error: 'Could not generate summary right now.' });
       }
@@ -950,15 +968,22 @@ app.get('/api/students/at-risk', async (req, res) => {
 
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs'); // Ensure fs is imported
 
-// Configure disk storage to point to the root 'data' folder
+// 1. Explicitly create the directory BEFORE multer initializes
+const uploadDir = path.join(__dirname, 'data');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// 2. Configure disk storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, 'data')); // Saves directly into the /data folder
+    cb(null, uploadDir); // Now it safely writes to /app/data
   },
   filename: function (req, file, cb) {
-    // Keep a clean filename or timestamp it if needed
-    cb(null, file.originalname);
+    // Pro-tip: Add a timestamp so simultaneous uploads don't overwrite each other
+    cb(null, Date.now() + '-' + file.originalname);
   }
 });
 
@@ -1006,18 +1031,19 @@ app.post('/assessments/single', async (req, res) => {
 });
 
 // 2. POST Endpoint for Bulk File Import (Triggers your Python Ingestion Script)
+
 app.post('/assessments/bulk-import', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded.' });
   }
 
-  const filePath = req.file.path;
-  // Corrected from 'child_path' to 'child_process'
+  const filePath = req.file.path; 
   const { exec } = require('child_process');
 
-  exec(`python3 ingest.py --file ${filePath}`, { cwd: '/app' }, (error, stdout, stderr) => {
+  // Executes Python using the absolute path mapped in docker-compose
+  exec(`python3 /app/ingestor/ingest.py --file "${filePath}"`, (error, stdout, stderr) => {
     const fs = require('fs');
-    fs.unlink(filePath, () => {}); // Clean up temporary file
+    fs.unlink(filePath, () => {}); // Clean up temporary file after processing
 
     if (error) {
       console.error('Bulk Import Exec Error:', error);
@@ -1038,4 +1064,3 @@ module.exports = {
   compileReport,
   compileClinicalReport,
 };
-

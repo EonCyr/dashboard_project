@@ -11,8 +11,8 @@ import MessageParentsModal from './components/MessageParentsModal.jsx'
 import { ParentModal } from './components/ParentModal';
 import AddAssessmentModal from './components/AddAssessmentModal.jsx';
 import ProfileSummaryCard from './components/ProfileSummaryCard.jsx';
-import AtRiskTable from './AtRiskTable.jsx';
-import RiskConfigModal from './RiskConfigModal.jsx';
+import AtRiskTable from './components/AtRiskTable.jsx';
+import RiskConfigModal from './components/RiskConfigModal.jsx';
 import { getRiskStatus } from './utils/risk';
 import TherapistSummaryCard from './components/TherapistSummaryCard.jsx';
 
