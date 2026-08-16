@@ -5,6 +5,7 @@ afterAll((done) => {
   // End the mysql connection pool if method exists
   if (pool && pool.end) {
     pool.end(done);
+    
   } else {
     done();
   }

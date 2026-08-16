@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import RiskConfigModal from '../RiskConfigModal';
+import RiskConfigModal from '../components/RiskConfigModal';
 import CommunicationThread from '../components/Communications';
 import { ParentModal } from '../components/ParentModal';
 import AddAssessmentModal from '../components/AddAssessmentModal';
